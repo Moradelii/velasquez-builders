@@ -1,0 +1,191 @@
+[
+  {
+    "id": "lead_1791657381179_l4qlx",
+    "createdAt": "2026-10-10T18:36:21.179Z",
+    "status": "Estimate Scheduled",
+    "firstName": "Elena",
+    "lastName": "Vargas",
+    "email": "elena.vargas@example.com",
+    "phone": "(317) 489-7681",
+    "service": "Commercial and Residential Project Management",
+    "projectType": "",
+    "timeline": "",
+    "budget": "",
+    "description": "On-site pre-inspection for new custom residential construction.",
+    "source": "On-Site Visit Scheduler",
+    "notes": "",
+    "visitRequested": true,
+    "visitDate": "2026-10-18",
+    "visitTimeSlot": "Morning (8:00 AM - 12:00 PM)",
+    "visitAddress": "1200 North Meridian St",
+    "visitCity": "Indianapolis, IN",
+    "visitZip": "",
+    "visitNotes": "",
+    "visitStatus": "Confirmed",
+    "history": [
+      {
+        "timestamp": "2026-10-10T18:36:21.180Z",
+        "action": "On-Site Inspection Booked",
+        "details": "Inspection scheduled for 2026-10-18 (Morning (8:00 AM - 12:00 PM)) at 1200 North Meridian St"
+      }
+    ]
+  },
+  {
+    "id": "lead_1791657363491_3egit",
+    "createdAt": "2026-10-10T18:36:03.491Z",
+    "status": "Estimate Scheduled",
+    "firstName": "Carlos",
+    "lastName": "Mendoza",
+    "email": "carlos.mendoza@example.com",
+    "phone": "(317) 555-0149",
+    "service": "Commercial and Residential Project Management",
+    "projectType": "",
+    "timeline": "",
+    "budget": "",
+    "description": "On-site pre-inspection for residential home expansion and facade remodeling.",
+    "source": "Website Quote Form",
+    "notes": "",
+    "history": [
+      {
+        "timestamp": "2026-10-10T18:36:03.491Z",
+        "action": "Lead Captured",
+        "details": "Received via Website Quote Form"
+      }
+    ]
+  },
+  {
+    "id": "lead_1728456001_abc1",
+    "createdAt": "2026-10-07T14:32:00.000Z",
+    "status": "New",
+    "firstName": "Michael",
+    "lastName": "Jenkins",
+    "email": "mjenkins@indyhomes.net",
+    "phone": "(317) 555-0142",
+    "service": "Construction of Houses & Buildings",
+    "projectType": "New Construction",
+    "timeline": "1-2 Months",
+    "budget": "$150,000 - $350,000",
+    "description": "Looking to construct a modern craftsman home on our 1.5-acre lot in Meridian Hills. We need architectural drafting, permit acquisition, and complete foundation-to-roof execution.",
+    "source": "Website Quote Form",
+    "notes": "Client requested phone consultation after 4:00 PM.",
+    "history": [
+      {
+        "timestamp": "2026-10-07T14:32:00.000Z",
+        "action": "Lead Captured",
+        "details": "Received via Website Quote Form"
+      }
+    ]
+  },
+  {
+    "id": "lead_1728456002_def2",
+    "createdAt": "2026-10-06T11:15:00.000Z",
+    "status": "Estimate Scheduled",
+    "firstName": "Sophia",
+    "lastName": "Rodriguez",
+    "email": "srodriguez@carmelliving.org",
+    "phone": "(317) 555-0188",
+    "service": "General Renovations",
+    "projectType": "Residential",
+    "timeline": "2-4 Weeks",
+    "budget": "$45,000 - $70,000",
+    "description": "Full kitchen remodeling, knocking down partition wall to create open concept, quartz countertops, and Hardie board exterior touch-up.",
+    "source": "Direct Phone / Website Referral",
+    "notes": "On-site visit confirmed for Thursday at 10:00 AM with Project Manager.",
+    "history": [
+      {
+        "timestamp": "2026-10-06T11:15:00.000Z",
+        "action": "Lead Captured",
+        "details": "Received via Direct Phone / Website Referral"
+      },
+      {
+        "timestamp": "2026-10-06T16:20:00.000Z",
+        "action": "Status Changed",
+        "details": "Changed from 'New' to 'Estimate Scheduled'"
+      }
+    ]
+  },
+  {
+    "id": "lead_1728456003_ghi3",
+    "createdAt": "2026-10-05T09:45:00.000Z",
+    "status": "Proposal Sent",
+    "firstName": "Robert",
+    "lastName": "Chen",
+    "email": "rchen@geisthaven.com",
+    "phone": "(317) 555-0199",
+    "service": "Composite Decking",
+    "projectType": "Residential",
+    "timeline": "As Soon As Possible",
+    "budget": "$28,000 - $35,000",
+    "description": "Replacing aging wood deck with 650 sq ft multi-tier composite deck (Trex Transcend) with integrated LED step lighting and aluminum balusters.",
+    "source": "Website Quote Form",
+    "notes": "Detailed architectural drawing and itemized proposal sent via email.",
+    "history": [
+      {
+        "timestamp": "2026-10-05T09:45:00.000Z",
+        "action": "Lead Captured",
+        "details": "Received via Website Quote Form"
+      },
+      {
+        "timestamp": "2026-10-05T15:30:00.000Z",
+        "action": "Status Changed",
+        "details": "Changed from 'Contacted' to 'Proposal Sent'"
+      }
+    ]
+  },
+  {
+    "id": "lead_1728456004_jkl4",
+    "createdAt": "2026-10-04T16:10:00.000Z",
+    "status": "Won",
+    "firstName": "David",
+    "lastName": "Miller",
+    "email": "dmiller@fishershomes.io",
+    "phone": "(317) 555-0211",
+    "service": "Vinyl Siding Installation",
+    "projectType": "Renovation",
+    "timeline": "1-2 Weeks",
+    "budget": "$18,500",
+    "description": "Complete tear-off and installation of premium insulated vinyl siding, seamless aluminum gutters, and custom trim around 14 windows.",
+    "source": "Google Local Search",
+    "notes": "Contract signed, deposit received. Materials scheduled for delivery Monday.",
+    "history": [
+      {
+        "timestamp": "2026-10-04T16:10:00.000Z",
+        "action": "Lead Captured",
+        "details": "Received via Google Local Search"
+      },
+      {
+        "timestamp": "2026-10-05T12:00:00.000Z",
+        "action": "Status Changed",
+        "details": "Changed from 'Proposal Sent' to 'Won'"
+      }
+    ]
+  },
+  {
+    "id": "lead_1728456005_mno5",
+    "createdAt": "2026-10-03T13:20:00.000Z",
+    "status": "Contacted",
+    "firstName": "Amanda",
+    "lastName": "Evans",
+    "email": "aevans@zionsville.org",
+    "phone": "(317) 555-0275",
+    "service": "Hardie Board Cladding",
+    "projectType": "Residential",
+    "timeline": "1-2 Months",
+    "budget": "$35,000 - $50,000",
+    "description": "James Hardie ColorPlus statement facade with board and batten gables. Requested samples of Iron Gray and Arctic White.",
+    "source": "Website Quote Form",
+    "notes": "Spoke on phone, color swatches delivered to client residence.",
+    "history": [
+      {
+        "timestamp": "2026-10-03T13:20:00.000Z",
+        "action": "Lead Captured",
+        "details": "Received via Website Quote Form"
+      },
+      {
+        "timestamp": "2026-10-03T17:00:00.000Z",
+        "action": "Status Changed",
+        "details": "Changed from 'New' to 'Contacted'"
+      }
+    ]
+  }
+]

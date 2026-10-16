@@ -1,0 +1,6 @@
+{
+  "name": "Velasquez Builders",
+  "description": "Licensed and insured commercial general contractor providing commercial and residential project management, home construction, structural renovations, and on-site pre-inspections in Indianapolis, IN.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,724 @@
+{
+  "hero": {
+    "badgeText": "Commercial General Contractor • Commercial and Residential Project Management",
+    "headline": "Commercial <span class='text-mint-400'>General</span> Contractor",
+    "description": "With over 10 years of experience, Velasquez Builders is a Commercial and Residential Project Management. We handle your entire project from start to finish, large or small. No matter the size, we manage everything. If you want to build on your own land, let us know. We design, obtain permits, and build.",
+    "imageUrl": "/images/gallery/01.webp",
+    "videoUrl": "/images/video/hero-bg.mp4"
+  },
+  "contact": {
+    "phone1": "(317) 489-7681 (English/Spanish)",
+    "phone2": "(317) 603-6968 (English/Spanish)",
+    "phone3": "(317) 993-0221 Español",
+    "email": "info@velasquezbuilders.com",
+    "address": "7780 N. Michigan Rd. Suite B. Indianapolis IN 46268",
+    "hours": "Mon - Sat: 9:00 AM - 7:00 PM"
+  },
+  "stats": [
+    {
+      "value": "500+",
+      "label": "Projects Completed",
+      "number": 500,
+      "suffix": "+"
+    },
+    {
+      "value": "10+",
+      "label": "Years of Experience",
+      "number": 10,
+      "suffix": "+"
+    },
+    {
+      "value": "16+",
+      "label": "Service Categories",
+      "number": 16,
+      "suffix": "+"
+    },
+    {
+      "value": "100%",
+      "label": "Satisfaction Rate",
+      "number": 100,
+      "suffix": "%"
+    }
+  ],
+  "services": [
+    {
+      "id": "new-construction-additions",
+      "title": "New Construction & Additions",
+      "desc": "Custom ground-up construction and additions with complete architectural design and permit coordination.",
+      "icon": "Building2",
+      "items": [
+        "Custom home construction.",
+        "Residential and light commercial construction.",
+        "Home additions and attached or detached garages.",
+        "Floor plan design and construction blueprint coordination.",
+        "Building permit applications and inspection coordination.",
+        "Structural framing."
+      ]
+    },
+    {
+      "id": "siding-exterior-improvements",
+      "title": "Siding & Exterior Improvements",
+      "desc": "Complete exterior building envelope protection, architectural cladding, fiber cement and trim.",
+      "icon": "Home",
+      "items": [
+        "Vinyl siding installation and replacement",
+        "James Hardie fiber cement siding",
+        "Board and batten siding",
+        "Vinyl shake and shingle siding",
+        "LP SmartSide siding and trim",
+        "Exterior trim, soffit, and fascia installation",
+        "House Wrap and exterior sheathing installation"
+      ]
+    },
+    {
+      "id": "roofing-gutters",
+      "title": "Roofing & Gutters",
+      "desc": "High-performance roofing systems, architectural shingles, and seamless drainage protection.",
+      "icon": "ShieldCheck",
+      "items": [
+        "Asphalt shingle roofing",
+        "Roof replacement and new construction roofing",
+        "Gutter and downspout installation and replacement"
+      ]
+    },
+    {
+      "id": "windows-doors",
+      "title": "Windows & Doors",
+      "desc": "Energy-efficient window upgrades and security-reinforced architectural entrance systems.",
+      "icon": "Grid",
+      "items": [
+        "Window installation and replacement",
+        "Door installation and replacement"
+      ]
+    },
+    {
+      "id": "outdoor-living",
+      "title": "Outdoor Living",
+      "desc": "Custom outdoor living spaces, premium composite decks, covered porches, pergolas and verandas.",
+      "icon": "Layers",
+      "items": [
+        "Composite and wood decks",
+        "Covered patios and screened porches",
+        "Pergolas and gazebos"
+      ]
+    }
+  ],
+  "portfolio": [
+    {
+      "id": "1",
+      "imageUrl": "/images/gallery/01.webp",
+      "url": "/images/gallery/01.webp",
+      "title": "Custom Detached Garage",
+      "categoryLocation": "New Construction & Additions",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "We built this spacious garage from the foundation up featuring reinforced concrete slab.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "2",
+      "imageUrl": "/images/gallery/02.webp",
+      "url": "/images/gallery/02.webp",
+      "title": "Contemporary Exterior Siding & Trim",
+      "categoryLocation": "Exterior Remodeling • Carmel, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Premium vinyl siding paired with architectural board and batten accents.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "3",
+      "imageUrl": "/images/gallery/03.webp",
+      "url": "/images/gallery/03.webp",
+      "title": "Custom Composite Outdoor Decking",
+      "categoryLocation": "Outdoor Living • Fishers, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Multi-tier low-maintenance composite deck installation featuring hidden fasteners.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "4",
+      "imageUrl": "/images/gallery/04.webp",
+      "url": "/images/gallery/04.webp",
+      "title": "Siding & Exterior Improvements",
+      "categoryLocation": "Doors & Windows • Zionsville, IN",
+      "location": "Zionsville, IN",
+      "svc": "Doors & Windows",
+      "description": "Vinyl siding installation and replacement.",
+      "updatedAt": "2026-10-15T21:49:32.195Z"
+    },
+    {
+      "id": "5",
+      "imageUrl": "images/gallery/05.webp",
+      "url": "images/gallery/05.webp",
+      "title": "Modern Open-Concept Interior Renovation",
+      "categoryLocation": "Interior Remodeling • Geist, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Comprehensive interior structural remodel including load-bearing wall removal, recessed lighting installation, Level 5 drywall finishing, and luxury architectural paint.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "6",
+      "imageUrl": "images/gallery/06.webp",
+      "url": "images/gallery/06.webp",
+      "title": "Seamless Heavy-Gauge Gutter System",
+      "categoryLocation": "Waterproofing & Gutters • Noblesville, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "On-site extruded 6-inch seamless aluminum gutters with oversized 3x4 downspouts, premium leaf protection hoods, and underground drainage tie-ins to safeguard the home foundation.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "7",
+      "imageUrl": "images/gallery/07.webp",
+      "url": "images/gallery/07.webp",
+      "title": "Luxury Vinyl Plank & Siding Facelift",
+      "categoryLocation": "Exterior Renovation • Westfield, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Complete exterior building envelope transformation with insulated vinyl cladding, architectural corner posts, and continuous soffit ventilation.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "8",
+      "imageUrl": "images/gallery/08.webp",
+      "url": "images/gallery/08.webp",
+      "title": "James Hardie Fiber Cement Cladding",
+      "categoryLocation": "Hardie Siding • Greenwood, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Factory ColorPlus James Hardie fiber cement lap siding. Class-A fire resistance, impact durability against storms, and crisp shadow lines on every elevation.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "9",
+      "imageUrl": "images/gallery/09.webp",
+      "url": "images/gallery/09.webp",
+      "title": "Cedar Shake Architectural Accent Siding",
+      "categoryLocation": "Accent Cladding • Avon, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Decorative polymer shake siding on gables and dormers providing authentic handcrafted wood texture without the rotting, painting, or pest vulnerabilities.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "10",
+      "imageUrl": "images/gallery/10.webp",
+      "url": "images/gallery/10.webp",
+      "title": "Modern Farmhouse Board & Batten",
+      "categoryLocation": "Custom Framing • Brownsburg, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Vertical board and batten siding installation designed for contemporary farmhouse aesthetics with sealed joints and contrasting dark window trim.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "11",
+      "imageUrl": "images/gallery/11.webp",
+      "url": "images/gallery/11.webp",
+      "title": "Vented Aluminum Soffits & Fascia Wrap",
+      "categoryLocation": "Roofline Systems • Marion County, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Continuous airflow soffit panels paired with custom-bent heavy aluminum fascia wraps preventing rot and eliminating periodic exterior painting.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "12",
+      "imageUrl": "images/gallery/12.webp",
+      "url": "images/gallery/12.webp",
+      "title": "Custom Interior Crown Molding & Millwork",
+      "categoryLocation": "Custom Carpentry • Hamilton County, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Precision carpentry including three-piece crown molding, wainscoting wall panels, and high baseboards throughout the formal living and dining areas.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "13",
+      "imageUrl": "images/gallery/13.webp",
+      "url": "images/gallery/13.webp",
+      "title": "Energy Star High-Performance Windows",
+      "categoryLocation": "Window Replacement • Boone County, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Double-hung low-E argon filled vinyl replacement windows providing superior thermal U-factors, sound dampening, and effortless tilt-in cleaning.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "14",
+      "imageUrl": "images/gallery/14.webp",
+      "url": "images/gallery/14.webp",
+      "title": "Custom Cedar Pergola & Patio Cover",
+      "categoryLocation": "Outdoor Living • Hendricks County, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Heavy timber Western Red Cedar shade pergola anchored into concrete footings, treated with UV-resistant natural stain for extended exterior service life.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "15",
+      "imageUrl": "images/gallery/15.webp",
+      "url": "images/gallery/15.webp",
+      "title": "Screened Gazebo & Enclosed Porch",
+      "categoryLocation": "Screen Porches • Johnson County, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Octagonal screened outdoor gazebo with tongue-and-groove vaulted cedar ceiling, ceiling fan wiring, and durable aluminum screen track enclosure.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "16",
+      "imageUrl": "images/gallery/16.webp",
+      "url": "images/gallery/16.webp",
+      "title": "Gourmet Chef Kitchen Renovation",
+      "categoryLocation": "Kitchen Remodeling • Hancock County, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Custom soft-close solid wood shaker cabinets, quartz waterfall edge island, subway tile backsplash, and dedicated pantry storage integration.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "17",
+      "imageUrl": "images/gallery/17.webp",
+      "url": "images/gallery/17.webp",
+      "title": "Full Residence Exterior Overhaul",
+      "categoryLocation": "Whole-Home Remodel • Shelby County, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Comprehensive exterior makeover combining new roof installation, updated insulated siding, front porch stone veneer, and architectural lighting fixtures.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "18",
+      "imageUrl": "images/gallery/18.webp",
+      "url": "images/gallery/18.webp",
+      "title": "Master Suite Bathroom Oasis",
+      "categoryLocation": "Bathroom Remodeling • Indianapolis, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Zero-threshold walk-in porcelain tile shower with frameless glass enclosure, dual vanity quartz countertops, and freestanding soaking tub.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "19",
+      "imageUrl": "images/gallery/19.webp",
+      "url": "images/gallery/19.webp",
+      "title": "The Meridian Hills Estate",
+      "categoryLocation": "Custom Homes • Indianapolis, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "5,400 sq ft custom-designed luxury residence featuring architectural limestone accents, grand entryway, and expansive outdoor living pavilion.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "20",
+      "imageUrl": "images/gallery/20.webp",
+      "url": "images/gallery/20.webp",
+      "title": "The Prairie Stone Estate",
+      "categoryLocation": "Custom Homes • Carmel, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Contemporary luxury construction with high energy efficiency ratings, geothermal heating integration, and modern open-plan layout.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "21",
+      "imageUrl": "images/gallery/21.webp",
+      "url": "images/gallery/21.webp",
+      "title": "Lakefront Timber & Stone Haven",
+      "categoryLocation": "Waterfront Residences • Geist, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Custom waterfront property crafted with structural Douglas fir timbers, natural stone veneer fireplaces, and panoramic wall-to-wall glass.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "22",
+      "imageUrl": "images/gallery/22.webp",
+      "url": "images/gallery/22.webp",
+      "title": "Basement Entertainment & Bar Suite",
+      "categoryLocation": "Basement Finishing • Fishers, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Lower-level remodel featuring wet bar with granite countertops, acoustic ceiling treatments, luxury vinyl tile, and guest suite bathroom.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "23",
+      "imageUrl": "images/gallery/23.webp",
+      "url": "images/gallery/23.webp",
+      "title": "Covered Lanai & Outdoor Kitchen",
+      "categoryLocation": "Outdoor Living • Zionsville, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Covered patio extension with built-in stainless steel BBQ grill, refrigerator, granite preparation surfaces, and infrared patio heaters.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "24",
+      "imageUrl": "images/gallery/24.webp",
+      "url": "images/gallery/24.webp",
+      "title": "Architectural Shingle Roofing Replacement",
+      "categoryLocation": "Roofing Systems • Noblesville, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Lifetime architectural shingles with synthetic underlayment, ice & water shield in all valleys, and ridge vent ventilation system.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "25",
+      "imageUrl": "images/gallery/25.webp",
+      "url": "images/gallery/25.webp",
+      "title": "Custom Sunroom & Four-Season Addition",
+      "categoryLocation": "Additions • Westfield, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Climate-controlled four-season sunroom featuring insulated glass windows, vaulted shiplap ceiling, and direct access to outdoor patio.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "26",
+      "imageUrl": "images/gallery/26.webp",
+      "url": "images/gallery/26.webp",
+      "title": "Stone Veneer Fireplace & Chimney",
+      "categoryLocation": "Masonry & Stone • Greenwood, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Floor-to-ceiling dry-stack manufactured stone fireplace with reclaimed timber mantle and gas log fireplace insert.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "27",
+      "imageUrl": "images/gallery/27.webp",
+      "url": "images/gallery/27.webp",
+      "title": "Commercial Office & Retail Renovation",
+      "categoryLocation": "Commercial Construction • Indianapolis, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Tenant improvement commercial renovation including steel stud framing, commercial drop ceilings, ADA compliant restrooms, and epoxy flooring.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "28",
+      "imageUrl": "images/gallery/28.webp",
+      "url": "images/gallery/28.webp",
+      "title": "Pool House & Changing Pavilion",
+      "categoryLocation": "Custom Structures • Carmel, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Dedicated poolside cabana with half bath, outdoor shower, storage for pool equipment, and folding glass pass-through serving window.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "29",
+      "imageUrl": "images/gallery/29.webp",
+      "url": "images/gallery/29.webp",
+      "title": "Custom Walk-In Closet & Dressing Room",
+      "categoryLocation": "Custom Millwork • Zionsville, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Built-in closet cabinetry with soft-close drawers, LED accent illumination, shoe display shelving, and central jewelry island.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    },
+    {
+      "id": "30",
+      "imageUrl": "images/gallery/30.webp",
+      "url": "images/gallery/30.webp",
+      "title": "Two-Story Home Addition & Extension",
+      "categoryLocation": "Home Additions • Meridian-Kessler, IN",
+      "location": "Indianapolis, IN",
+      "svc": "Construction",
+      "description": "Seamless two-story home addition adding 1,200 sq ft including main floor family room and second floor primary master suite.",
+      "updatedAt": "2026-10-15T21:03:59.283Z"
+    }
+  ],
+  "process": [
+    {
+      "step": 1,
+      "title": "Free Consultation & Estimate",
+      "desc": "We meet with you on site to understand your vision, take detailed measurements, and provide a transparent, comprehensive proposal."
+    },
+    {
+      "step": 2,
+      "title": "Architectural Design & Permitting",
+      "desc": "Our team finalizes blueprints, selects premium materials, and secures all necessary city and county building permits."
+    },
+    {
+      "step": 3,
+      "title": "Master Craftsmanship Construction",
+      "desc": "Our licensed, bonded builders execute framing, plumbing, electrical, and custom finishes with strict adherence to quality codes."
+    },
+    {
+      "step": 4,
+      "title": "Final Walkthrough & Warranty",
+      "desc": "We conduct a thorough final inspection together, ensuring 100% client satisfaction backed by our written guarantee."
+    }
+  ],
+  "team": [
+    {
+      "name": "Master Craftsmen Crew",
+      "role": "General Contractor & Licensed Builders",
+      "url": "images/gallery/31.webp",
+      "description": "Our dedicated multidisciplinary team brings over 10 years of general contracting experience across Indianapolis and central Indiana. From master carpenters, structural framers, and masonry specialists to certified project managers, we execute every custom home, renovation, deck, and siding project with absolute precision, safety, and unwavering dedication to craftsmanship."
+    }
+  ],
+  "quoteForm": {
+    "sections": [
+      {
+        "id": "service",
+        "label": "Service Needed",
+        "options": [
+          "Commercial and Residential Project Management",
+          "Comercial General Contractor",
+          "Construction of Houses & Buildings",
+          "Interior & Exterior Painting",
+          "Composite Decking",
+          "Vinyl Siding Installation",
+          "Hardie Board Cladding",
+          "Window Installation",
+          "Seamless Gutters",
+          "General Renovations"
+        ]
+      },
+      {
+        "id": "projectType",
+        "label": "Project Type",
+        "options": [
+          "Residential",
+          "Commercial",
+          "New Construction",
+          "Renovation & Addition"
+        ]
+      },
+      {
+        "id": "timeline",
+        "label": "Timeline",
+        "options": [
+          "As Soon As Possible",
+          "1-2 Weeks",
+          "2-4 Weeks",
+          "1-2 Months",
+          "Flexible"
+        ]
+      },
+      {
+        "id": "budget",
+        "label": "Estimated Budget Range",
+        "options": [
+          "Under $10,000",
+          "$10,000 - $30,000",
+          "$30,000 - $75,000",
+          "$75,000 - $150,000",
+          "$150,000+"
+        ]
+      }
+    ]
+  },
+  "licenses": [
+    {
+      "id": "licence-1",
+      "title": "General Contractor License",
+      "subtitle": "City of Indianapolis & Marion County",
+      "licenseNumber": "GL2400891",
+      "status": "Licensed, Bonded & Verified",
+      "image": "images/gallery/licence-1.jpeg",
+      "desc": "Official City of Indianapolis and Marion County General Building Contractor license, fully registered and authorized for residential and commercial construction."
+    },
+    {
+      "id": "licence-2",
+      "title": "Certificate of Liability & Insurance",
+      "subtitle": "Commercial General Liability & Workers' Comp",
+      "licenseNumber": "GL-567890",
+      "status": "Active Coverage • $2,000,000",
+      "image": "images/gallery/licence-2.jpeg",
+      "desc": "Comprehensive commercial liability protection and worker compensation coverage safeguarding clients, properties, and project teams across every build."
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Michael R.",
+      "location": "Carmel, IN",
+      "text": "Velasquez Builders transformed our home with new Hardie board siding and custom energy-efficient windows. The crew was exceptionally clean, punctual, and true masters of their trade.",
+      "rating": 5
+    },
+    {
+      "name": "Sarah T.",
+      "location": "Zionsville, IN",
+      "text": "Outstanding renovation work from foundation to finish. They built our two-story home addition on time and exactly within the agreed budget. We couldn't be happier!",
+      "rating": 5
+    },
+    {
+      "name": "David & Elena K.",
+      "location": "Indianapolis, IN",
+      "text": "They designed and built our custom detached garage and multi-level composite deck. Transparent pricing, top-tier communication, and immaculate attention to detail.",
+      "rating": 5
+    }
+  ],
+  "features": [
+    {
+      "icon": "🛡️",
+      "title": "Licensed, Bonded & Insured",
+      "desc": "Full liability protection, worker compensation coverage, and city-registered general contracting licenses across Indiana."
+    },
+    {
+      "icon": "⭐",
+      "title": "10+ Years Building Excellence",
+      "desc": "Over a decade of proven experience delivering custom homes, exterior renovations, and structural additions."
+    },
+    {
+      "icon": "⏱️",
+      "title": "Guaranteed Timelines & Budgets",
+      "desc": "No surprise charges or hidden fees. We provide detailed itemized scopes of work and adhere strictly to milestones."
+    },
+    {
+      "icon": "🤝",
+      "title": "Turnkey Single-Source Contractor",
+      "desc": "From architectural blueprints and permits to foundation, framing, siding, and final interior millwork, we manage everything."
+    }
+  ],
+  "footerColumns": [
+    {
+      "title": "Company",
+      "items": [
+        "About Us",
+        "Our Process",
+        "Service Areas",
+        "Homes We’ve Built",
+        "Contact"
+      ]
+    },
+    {
+      "title": "Services",
+      "items": [
+        "New Home Construction",
+        "General Renovations",
+        "Composite Decking",
+        "Siding & Hardie Board",
+        "Interior & Exterior Painting"
+      ]
+    }
+  ],
+  "footer": {
+    "about": "Premier General Contractor in Indianapolis, Indiana. Over 10 years of experience delivering high-quality home construction and renovations.",
+    "whyChooseUs": [
+      "Licensed, Bonded & Insured",
+      "10+ Years Building in Indiana",
+      "Free Detailed Estimates",
+      "Turnkey Project Management",
+      "100% Quality Workmanship"
+    ],
+    "paymentMethods": [
+      "💳 Visa",
+      "💳 Mastercard",
+      "💳 Amex",
+      "💳 Discover",
+      "💵 Cash",
+      "📱 Zelle"
+    ],
+    "whatsapp": {
+      "phone": "13174897681",
+      "message": "Hello Velasquez Builders, I would like to request information about a project."
+    },
+    "attribution": {
+      "text": "By: Mora-Grafic's Studio",
+      "url": "https://mora-grafics-studio.com/"
+    }
+  },
+  "credentials": {
+    "license1": "images/gallery/licence-1.jpeg",
+    "license2": "images/gallery/licence-2.jpeg",
+    "title": "Licensed, Bonded & Insured Commercial Contractor",
+    "subtitle": "Official Indiana General Contracting Licenses & Certifications"
+  },
+  "footerCopyright": "© 2026 Velasquez Builders. All rights reserved.",
+  "homes": {
+    "headline": "Homes We’ve Built",
+    "description": "Each home reflects the unique lifestyle of the families who live there. Explore our featured custom-designed residences below with technical architectural blueprints and specifications.",
+    "projects": [
+      {
+        "id": "project-1",
+        "title": "Architectural Timber Framing Residence",
+        "tagline": "Architectural Timber Framing",
+        "address": "Meridian Hills / Indianapolis, IN",
+        "specs": "5,400 Sq. Ft. • 5 Bedrooms • 5.5 Bathrooms",
+        "sqft": "5,400 Sq. Ft.",
+        "beds": "5 Bedrooms",
+        "baths": "5.5 Bathrooms",
+        "garage": "Car Garage + Boat Bay & Workshop",
+        "year": "2025",
+        "style": "Architectural Timber Framing",
+        "desc": "A custom architectural timber framing estate built from ground up by Velasquez Builders. Engineered with structural heavy timber cathedral trusses, open-concept living, custom artisan millwork, and dedicated car garage plus boat bay and workshop.",
+        "highlights": [
+          "Heavy architectural timber truss framing & structural engineering",
+          "5 Spacious bedroom suites with 5.5 luxury appointed bathrooms",
+          "Dedicated Car Garage + high-clearance Boat Bay & Workshop",
+          "Energy-efficient building envelope with custom Low-E architectural glazing"
+        ],
+        "image": "images/gallery/project-1/img-1.webp",
+        "galleryImages": [
+          "images/gallery/project-1/img-2.webp",
+          "images/gallery/project-1/img-3.webp",
+          "images/gallery/project-1/img-4.webp",
+          "images/gallery/project-1/img-5.webp"
+        ]
+      },
+      {
+        "id": "project-2",
+        "title": "Contemporary Luxury & Energy Efficient Estate",
+        "tagline": "Contemporary Luxury & Energy Efficient",
+        "address": "Spring Mill Rd / Carmel, IN",
+        "specs": "5,200 Sq. Ft. • 4 Bedrooms • 5 Bathrooms",
+        "sqft": "5,200 Sq. Ft.",
+        "beds": "4 Bedrooms",
+        "baths": "5 Bathrooms",
+        "garage": "3-Car Oversized Heated Garage",
+        "year": "2025",
+        "style": "Contemporary Luxury & Energy Efficient",
+        "desc": "An extraordinary 5,200 sq. ft. contemporary luxury residence combining clean architectural lines with ultra-efficient sustainable construction. Features cathedral ceilings, Indiana limestone masonry, and an expansive 3-car oversized heated garage.",
+        "highlights": [
+          "Continuous thermal envelope with net-zero energy design principles",
+          "4 Grand bedroom suites with 5 custom designer bathrooms",
+          "3-Car oversized heated garage with epoxy sealed foundation",
+          "Floor-to-ceiling panoramic architectural window systems"
+        ],
+        "image": "images/gallery/project-2/img-1.webp",
+        "galleryImages": [
+          "images/gallery/project-2/img-2.webp",
+          "images/gallery/project-2/img-3.webp",
+          "images/gallery/project-2/img-4.webp",
+          "images/gallery/project-2/img-5.webp"
+        ]
+      },
+      {
+        "id": "project-3",
+        "title": "Architectural Timber Framing Lakefront Residence",
+        "tagline": "Architectural Timber Framing",
+        "address": "Geist Lakefront / Indianapolis, IN",
+        "specs": "5,400 Sq. Ft. • 5 Bedrooms • 5.5 Bathrooms",
+        "sqft": "5,400 Sq. Ft.",
+        "beds": "5 Bedrooms",
+        "baths": "5.5 Bathrooms",
+        "garage": "3-Car Garage + Boat Bay & Workshop",
+        "year": "2025",
+        "style": "Architectural Timber Framing",
+        "desc": "A breathtaking waterfront residence showcasing authentic architectural timber framing, dramatic vaulted ceilings, panoramic lake views, wrap-around covered veranda, and a 3-car garage plus integrated boat bay and workshop.",
+        "highlights": [
+          "Authentic timber framing with custom forged steel connection plates",
+          "5 Bedrooms and 5.5 bathrooms with spa-inspired owner retreat",
+          "Integrated 3-Car Garage plus specialized Boat Bay & Workshop",
+          "Expansive multi-tier outdoor living veranda with exterior fireplace"
+        ],
+        "image": "images/gallery/project-3/img-1.webp",
+        "galleryImages": [
+          "images/gallery/project-3/img-2.webp",
+          "images/gallery/project-3/img-3.webp",
+          "images/gallery/project-3/img-4.webp",
+          "images/gallery/project-3/img-5.webp"
+        ]
+      }
+    ]
+  }
+}

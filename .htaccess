@@ -1,0 +1,85 @@
+# ====================================================================
+# SITEGROUND & APACHE PRODUCTION CONFIGURATION - VELASQUEZ BUILDERS
+# Optimized for Fast Loading, Anti-Cache Busting & Strict Security
+# ====================================================================
+
+# 1. UTF-8 ENCODING & DEFAULT OPTIONS
+AddDefaultCharset UTF-8
+Options -Indexes +FollowSymLinks
+
+# 2. CACHE-CONTROL HEADERS (REAL-TIME CACHE BUSTING POLICY)
+<IfModule mod_headers.c>
+  # 2.1 NEVER CACHE HTML (Ensures clients immediately receive newest build and CMS references)
+  <FilesMatch "\.(html|htm|php)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, post-check=0, pre-check=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+    Header set Surrogate-Control "no-store"
+  </FilesMatch>
+
+  # 2.2 NEVER CACHE LIVE DATA CONFIG & JSON (Real-Time CMS/CRM Synchronization)
+  <FilesMatch "\.(json)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+    Header set Surrogate-Control "no-store"
+  </FilesMatch>
+
+  # 2.3 REVALIDATE MEDIA & UPLOADED IMAGES IMMEDIATELY (Prevents stale gallery/logo/video caching)
+  <FilesMatch "\.(webp|png|jpg|jpeg|gif|ico|svg|mp4)$">
+    Header set Cache-Control "no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # 2.4 IMMUTABLE CACHING STRICTLY FOR UNIQUE HASHED VITE BUNDLES IN /assets/
+  <FilesMatch "^.+-[a-zA-Z0-9_-]{8,}\.(js|css|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # 2.4 SECURITY HEADERS
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# 3. GZIP / BROTLI COMPRESSION
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/xml
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# 4. MOD_REWRITE RULES (SPA ROUTING & CLEAN PATHS)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 4.1 Force HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # 4.2 Route /admin to admin.html
+  RewriteRule ^admin/?$ admin.html [L]
+
+  # 4.3 Route /homes to index.html
+  RewriteRule ^homes/?$ index.html#homes [NE,L]
+
+  # 4.4 If existing file or directory exists, serve directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 4.5 Fallback everything else to index.html for SPA router
+  RewriteRule ^ index.html [L]
+</IfModule>
