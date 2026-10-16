@@ -256,14 +256,14 @@ async function startServer() {
               updatedAt: new Date().toISOString(),
             };
           });
-          writePortfolioData(portfolioItems);
+          writeSyncedPortfolio(portfolioItems);
           newConfig.portfolio = portfolioItems;
         } catch (e) {
           console.warn("Notice: could not sync portfolioData.json from config", e);
         }
       }
 
-      fs.writeFileSync(CONFIG_PATH, JSON.stringify(newConfig, null, 2), "utf-8");
+      writeSyncedConfig(newConfig);
 
       return res.status(200).json({
         success: true,
@@ -285,6 +285,44 @@ async function startServer() {
   // Direct JSON file access aliases with guaranteed anti-cache headers
   app.get(["/config.json", "/config"], handleConfigGet);
 
+  // Helper functions to persist data simultaneously to root, public/data and dist/data
+  function writeSyncedConfig(newConfig: any) {
+    const json = JSON.stringify(newConfig, null, 2);
+    const paths = [
+      CONFIG_PATH,
+      path.resolve(process.cwd(), "public", "data", "config.json"),
+      path.resolve(process.cwd(), "public", "config.json"),
+      path.resolve(process.cwd(), "dist", "data", "config.json"),
+      path.resolve(process.cwd(), "dist", "config.json"),
+    ];
+    for (const p of paths) {
+      try {
+        const dir = path.dirname(p);
+        if (p.includes("dist") && !fs.existsSync(path.resolve(process.cwd(), "dist"))) continue;
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(p, json, "utf-8");
+      } catch (e) {}
+    }
+
+    try {
+      let portData: any = [];
+      if (Array.isArray(newConfig.portfolio)) {
+        portData = newConfig.portfolio;
+      } else if (fs.existsSync(PORTFOLIO_PATH)) {
+        portData = JSON.parse(fs.readFileSync(PORTFOLIO_PATH, "utf-8"));
+      }
+      const jsCode = `// Velasquez Builders - Pre-bundled default configuration for instant static rendering\nwindow.__DEFAULT_VB_CONFIG__ = ${json};\nwindow.__DEFAULT_PORTFOLIO__ = ${JSON.stringify(portData)};\n`;
+      const scriptPaths = [
+        path.resolve(process.cwd(), "public", "default-config.js"),
+        path.resolve(process.cwd(), "dist", "default-config.js"),
+      ];
+      for (const sp of scriptPaths) {
+        if (sp.includes("dist") && !fs.existsSync(path.resolve(process.cwd(), "dist"))) continue;
+        fs.writeFileSync(sp, jsCode, "utf-8");
+      }
+    } catch (e) {}
+  }
+
   // =========================================================================
   // PORTFOLIO DATABASE ENDPOINTS (portfolioData.json)
   // =========================================================================
@@ -303,21 +341,40 @@ async function startServer() {
     return [];
   }
 
-  function writePortfolioData(data: any[]) {
+  function writeSyncedPortfolio(data: any[]) {
     if (Array.isArray(data)) {
       data.sort((a: any, b: any) => Number(a.id || 0) - Number(b.id || 0));
     }
-    fs.writeFileSync(PORTFOLIO_PATH, JSON.stringify(data, null, 2), "utf-8");
+    const json = JSON.stringify(data, null, 2);
+    const paths = [
+      PORTFOLIO_PATH,
+      path.resolve(process.cwd(), "public", "data", "portfolioData.json"),
+      path.resolve(process.cwd(), "public", "portfolioData.json"),
+      path.resolve(process.cwd(), "dist", "data", "portfolioData.json"),
+      path.resolve(process.cwd(), "dist", "portfolioData.json"),
+    ];
+    for (const p of paths) {
+      try {
+        const dir = path.dirname(p);
+        if (p.includes("dist") && !fs.existsSync(path.resolve(process.cwd(), "dist"))) continue;
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(p, json, "utf-8");
+      } catch (e) {}
+    }
     if (fs.existsSync(CONFIG_PATH)) {
       try {
         const raw = fs.readFileSync(CONFIG_PATH, "utf-8");
         const parsed = JSON.parse(raw);
         parsed.portfolio = data;
-        fs.writeFileSync(CONFIG_PATH, JSON.stringify(parsed, null, 2), "utf-8");
+        writeSyncedConfig(parsed);
       } catch (e) {
         console.warn("Could not sync config.json portfolio property:", e);
       }
     }
+  }
+
+  function writePortfolioData(data: any[]) {
+    writeSyncedPortfolio(data);
   }
 
   // GET /api/portfolio
@@ -680,10 +737,7 @@ async function startServer() {
     app.use(vite.middlewares);
 
     app.get(["/admin", "/admin.html"], (req, res) => {
-      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Expires", "0");
-      res.sendFile(path.join(process.cwd(), "admin.html"));
+      res.redirect(301, "/?panel=cms");
     });
     app.get(["/homes", "/homes.html"], (req, res) => {
       res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
@@ -728,6 +782,10 @@ async function startServer() {
   // Serve static CSS directly from public/css and css
   app.use("/css", express.static(path.join(process.cwd(), "public", "css")));
   app.use("/css", express.static(path.join(process.cwd(), "css")));
+
+  // Serve static data directory for JSON configuration and portfolio
+  app.use("/data", express.static(path.join(process.cwd(), "public", "data")));
+  app.use("/data", express.static(path.join(process.cwd(), "dist", "data")));
 
   // Serve reload.js client directly
   app.get("/reload.js", (req, res) => {

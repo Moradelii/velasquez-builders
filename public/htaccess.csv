@@ -1,0 +1,42 @@
+# Velasquez Builders - Production Apache & SiteGround SuperCacher Configuration
+# Copied to dist/ root automatically during vite build
+
+<IfModule mod_headers.c>
+  # 1. SiteGround Dynamic Cache Bypass for dynamic pages and JSON data
+  <FilesMatch "\.(html|htm|json|php)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0"
+    Header set Pragma "no-cache"
+    Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+    Header set X-Cache-Enabled "False"
+    Header set X-SG-Cache "bypass"
+    Header set X-Cache "bypass"
+    Header unset ETag
+  </FilesMatch>
+
+  # 2. Immutable Long-Term Caching for static assets with content hashes
+  <FilesMatch "\.(js|css|webp|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+FileETag None
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  
+  # Admin & Clean routes
+  RewriteRule ^admin/?$ /?panel=cms [R=301,L]
+  RewriteRule ^admin\.html/?$ /?panel=cms [R=301,L]
+  RewriteRule ^homes/?$ index.html#homes [NE,L]
+  
+  # Existing files and directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  
+  # Fallback to index.html
+  RewriteRule ^ index.html [L]
+</IfModule>

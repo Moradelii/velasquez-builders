@@ -382,6 +382,30 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
     downloadAnchor.remove();
   };
 
+  // Manual SiteGround cache purge
+  const handlePurgeCache = async () => {
+    try {
+      const now = Date.now();
+      await fetch(`/purge-cache.php?_v=${now}`, {
+        cache: 'no-store',
+        headers: {
+          'X-Purge-Cache': 'true',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      setNotice({
+        type: 'success',
+        message: '🧹 SiteGround SuperCacher dynamic cache purge sent successfully!'
+      });
+    } catch (e: any) {
+      setNotice({
+        type: 'info',
+        message: '🧹 SiteGround cache purge pinged.'
+      });
+    }
+  };
+
   // Trigger Import config
   const handleImportClick = () => {
     if (importInputRef.current) {
@@ -631,6 +655,16 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
               <span>Import</span>
             </button>
           </div>
+
+          {/* SiteGround Cache Purge Button */}
+          <button
+            onClick={handlePurgeCache}
+            className="w-full bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 text-amber-300 font-semibold py-2 px-3 rounded-lg text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
+            title="Purge SiteGround SuperCacher and NGINX proxy dynamic cache"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+            <span>Clear SiteGround Cache</span>
+          </button>
 
           {/* Red Logout / Close Button */}
           <button

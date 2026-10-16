@@ -119,14 +119,16 @@
   }
 </script>
 <script type="module" src="/src/main.tsx"></script>
+<!-- Pre-bundled baseline defaults for instantaneous 0ms first render on static hosts -->
+<script src="/default-config.js"></script>
 <!-- ===== CONFIG LOADER & CONSOLIDATED REAL-TIME SYNC - Velasquez Builders ===== -->
 <script>
 function bustUrl(u) {
   if (!u) return '';
-  let clean = u.startsWith('public/') ? '/' + u.slice(7) : (u.startsWith('/') || u.startsWith('http') ? u : '/' + u);
-  const now = Date.now();
-  const base = clean.replace(/([?&])v=\d+/, '');
-  return base + (base.includes('?') ? '&' : '?') + 'v=' + now;
+  if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:')) return u;
+  let clean = u.startsWith('public/') ? u.slice(7) : u;
+  if (!clean.startsWith('/')) clean = '/' + clean;
+  return clean;
 }
 
 let lastAppliedHash = '';
@@ -740,10 +742,10 @@ async function applyConfig(cfg, force = false) {
         const projNum = idx + 1;
         // Default secondary images for the 4 perspectives
         const defaultGallery = [
-          `images/gallery/project-${projNum}/img-2.webp`,
-          `images/gallery/project-${projNum}/img-3.webp`,
-          `images/gallery/project-${projNum}/img-4.webp`,
-          `images/gallery/project-${projNum}/img-5.webp`
+          `/images/gallery/project-${projNum}/img-2.webp`,
+          `/images/gallery/project-${projNum}/img-3.webp`,
+          `/images/gallery/project-${projNum}/img-4.webp`,
+          `/images/gallery/project-${projNum}/img-5.webp`
         ];
 
         const gallery = Array.isArray(home.galleryImages) && home.galleryImages.length >= 4
@@ -1080,60 +1082,105 @@ async function applyConfig(cfg, force = false) {
 // ===== REAL-TIME SYNC ENGINE & CROSS-TAB BROADCAST =====
 const cmsBroadcast = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('vb_cms_sync') : null;
 
-// Network-First Config Loader: Always queries server first with anti-cache headers & cb timestamp
+// Network-First Config Loader: Queries server /api first, then static /data/, then root JSON (Cloudflare Pages & SiteGround)
 async function fetchLatestConfig() {
   const now = Date.now();
+  const fetchHeaders = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  };
+
+  let cfg = null;
+  let portData = null;
+
+  // Tier 1: /api endpoints (Express full-stack backend)
   try {
-    const [cfgRes, portRes] = await Promise.all([
-      fetch(`/api/config?_cb=${now}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      }),
-      fetch(`/api/portfolio?_cb=${now}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      }).catch(() => null)
-    ]);
-
+    const cfgRes = await fetch(`/api/config?_cb=${now}`, { cache: 'no-store', headers: fetchHeaders });
     if (cfgRes.ok) {
-      const cfg = await cfgRes.json();
-      if (portRes && portRes.ok) {
-        const portData = await portRes.json();
-        if (Array.isArray(portData) && portData.length > 0) {
-          cfg.portfolio = portData;
-        }
-      }
-      // Save freshest authoritative server data to localStorage
+      cfg = await cfgRes.json();
       try {
-        localStorage.setItem('vb_config_sync', JSON.stringify(cfg));
+        const portRes = await fetch(`/api/portfolio?_cb=${now}`, { cache: 'no-store', headers: fetchHeaders });
+        if (portRes.ok) portData = await portRes.json();
       } catch (e) {}
-
-      applyConfigDebounced(cfg);
-      return cfg;
     }
-  } catch (error) {
-    console.warn('Real-time config fetch failed, checking offline draft', error);
+  } catch (e) {
+    // Expected on static hosting
   }
 
-  // Fallback to local draft only if offline or network completely unreachable
+  // Tier 2: /data/ static endpoints (Cloudflare Pages & SiteGround)
+  if (!cfg) {
+    try {
+      const cfgRes = await fetch(`/data/config.json?_v=${now}`, { cache: 'no-store', headers: fetchHeaders });
+      if (cfgRes.ok) {
+        cfg = await cfgRes.json();
+        try {
+          const portRes = await fetch(`/data/portfolioData.json?_v=${now}`, { cache: 'no-store', headers: fetchHeaders });
+          if (portRes.ok) portData = await portRes.json();
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
+
+  // Tier 3: root static endpoints (/config.json & /portfolioData.json)
+  if (!cfg) {
+    try {
+      const cfgRes = await fetch(`/config.json?_v=${now}`, { cache: 'no-store', headers: fetchHeaders });
+      if (cfgRes.ok) {
+        cfg = await cfgRes.json();
+        try {
+          const portRes = await fetch(`/portfolioData.json?_v=${now}`, { cache: 'no-store', headers: fetchHeaders });
+          if (portRes.ok) portData = await portRes.json();
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
+
+  // If network config was found:
+  if (cfg) {
+    if (Array.isArray(portData) && portData.length > 0) {
+      cfg.portfolio = portData;
+    }
+    try {
+      localStorage.setItem('vb_config_sync', JSON.stringify(cfg));
+    } catch (e) {}
+    applyConfigDebounced(cfg);
+    return cfg;
+  }
+
+  // Tier 4: Local draft fallback (offline / network error)
   const localDraft = localStorage.getItem('vb_config_sync');
   if (localDraft) {
     try {
-      applyConfigDebounced(JSON.parse(localDraft));
+      const parsed = JSON.parse(localDraft);
+      applyConfigDebounced(parsed);
+      return parsed;
     } catch(e) {}
+  }
+
+  // Tier 5: Baseline embedded fallback
+  if (window.__DEFAULT_VB_CONFIG__) {
+    applyConfigDebounced(window.__DEFAULT_VB_CONFIG__);
+    return window.__DEFAULT_VB_CONFIG__;
   }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Initial load from server (Network-First)
+  // 0. Instant render from local draft or bundled baseline config (0ms First Contentful Paint)
+  const instantDraft = localStorage.getItem('vb_config_sync');
+  if (instantDraft) {
+    try {
+      applyConfig(JSON.parse(instantDraft));
+    } catch(e) {}
+  } else if (window.__DEFAULT_VB_CONFIG__) {
+    const baseline = JSON.parse(JSON.stringify(window.__DEFAULT_VB_CONFIG__));
+    if (window.__DEFAULT_PORTFOLIO__ && Array.isArray(window.__DEFAULT_PORTFOLIO__)) {
+      baseline.portfolio = window.__DEFAULT_PORTFOLIO__;
+    }
+    applyConfig(baseline);
+  }
+
+  // 1. Initial load from server (Network-First) with dynamic cache-busting
   await fetchLatestConfig();
 
   // 2. Instant cross-tab real-time sync via BroadcastChannel
@@ -2300,25 +2347,42 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
             </p>
           </div>
 
-          <div class="space-y-4 bg-charcoal-50 p-6 rounded-2xl border border-charcoal-100">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal-500 mb-2">Headquarters &amp; Direct Line</h3>
-            <a href="#" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group contact-phone-v">
-              <div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-              </div>
-              <div><p class="text-xs text-charcoal-400">Phone</p><p class="font-semibold text-sm">Loading...</p></div>
-            </a>
-            <a href="#" id="contact-email-link" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group">
+					<div class="space-y-4 bg-charcoal-50 p-6 rounded-2xl border border-charcoal-100"> 
+						<h3 class="text-xs font-bold uppercase tracking-wider text-charcoal-500 mb-2">Headquarters &amp; Direct Line</h3> 
+						
+						<!-- Primer Número -->
+						<a href="tel:+13174897681" id="contact-phone-link" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group"> 
+							<div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0"> 
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg> 
+							</div> 
+							<div>
+								<p class="text-xs text-charcoal-400">Phone</p>
+								<p id="contact-phone-direct" class="font-semibold text-sm">(317) 489-7681 (English/Spanish)</p>
+							</div> 
+						</a> 
+
+						<!-- Segundo Número (Corregido y con Icono) -->
+						<a href="tel:+13179930221" id="contact-phone-link-es" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group"> 
+							<div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0"> 
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg> 
+							</div> 
+							<div>
+								<p class="text-xs text-charcoal-400">Phone</p>
+								<p id="contact-phone-direct-es" class="font-semibold text-sm">(317) 993-0221 Español</p>
+							</div> 
+						</a>
+
+            <a href="mailto:contact@velasquezbuilders.com" id="contact-email-link" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group">
               <div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
               </div>
-              <div><p class="text-xs text-charcoal-400">Email</p><p id="contact-email" class="font-semibold text-sm">Loading...</p></div>
+              <div><p class="text-xs text-charcoal-400">Email</p><p id="contact-email" class="font-semibold text-sm">contact@velasquezbuilders.com</p></div>
             </a>
             <div class="flex items-center gap-4 text-charcoal-700">
               <div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               </div>
-              <div><p class="text-xs text-charcoal-400">Address</p><p id="contact-address" class="font-semibold text-sm">Loading...</p></div>
+              <div><p class="text-xs text-charcoal-400">Address</p><p id="contact-address" class="font-semibold text-sm">Indianapolis, IN 46220</p></div>
             </div>
           </div>
 
@@ -2340,16 +2404,16 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
             </p>
 
             <div class="grid grid-cols-2 gap-4 pt-1">
-              <div class="group relative rounded-xl overflow-hidden border border-charcoal-200 shadow-sm cursor-pointer aspect-4/3 bg-charcoal-900" onclick="openLightbox('images/gallery/licence-1.jpeg', 'Velasquez Builders - General Contractor License (Part 1)')">
-                <img id="license-img-1" src="images/gallery/licence-1.jpeg" alt="Contractor License 1" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+              <div class="group relative rounded-xl overflow-hidden border border-charcoal-200 shadow-sm cursor-pointer aspect-4/3 bg-charcoal-900" onclick="openLightbox('/images/gallery/licence-1.jpeg', 'Velasquez Builders - General Contractor License (Part 1)')">
+                <img id="license-img-1" src="/images/gallery/licence-1.jpeg" alt="Contractor License 1" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                 <div class="absolute inset-0 bg-charcoal-950/30 group-hover:bg-charcoal-950/10 transition-colors"></div>
                 <div class="absolute bottom-2 left-2 right-2 px-2 py-1 bg-charcoal-900/90 backdrop-blur rounded text-[11px] font-bold text-white text-center truncate">
                   Contractor License (1)
                 </div>
               </div>
 
-              <div class="group relative rounded-xl overflow-hidden border border-charcoal-200 shadow-sm cursor-pointer aspect-4/3 bg-charcoal-900" onclick="openLightbox('images/gallery/licence-2.jpeg', 'Velasquez Builders - General Contractor License (Part 2)')">
-                <img id="license-img-2" src="images/gallery/licence-2.jpeg" alt="Contractor License 2" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+              <div class="group relative rounded-xl overflow-hidden border border-charcoal-200 shadow-sm cursor-pointer aspect-4/3 bg-charcoal-900" onclick="openLightbox('/images/gallery/licence-2.jpeg', 'Velasquez Builders - General Contractor License (Part 2)')">
+                <img id="license-img-2" src="/images/gallery/licence-2.jpeg" alt="Contractor License 2" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                 <div class="absolute inset-0 bg-charcoal-950/30 group-hover:bg-charcoal-950/10 transition-colors"></div>
                 <div class="absolute bottom-2 left-2 right-2 px-2 py-1 bg-charcoal-900/90 backdrop-blur rounded text-[11px] font-bold text-white text-center truncate">
                   Contractor License (2)
@@ -2562,7 +2626,10 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
         <span class="text-charcoal-700">•</span>
         <a href="#terms" onclick="openLegalModal('terms');return false;" class="hover:text-mint-400 transition-colors">Terms of Service</a>
         <span class="text-charcoal-700">•</span>
-        <a href="/?panel=cms" target="_blank" rel="noopener noreferrer" class="hover:text-mint-400 transition-colors">Administrador</a>
+        <button type="button" onclick="openAdminAuthModal()" class="hover:text-mint-400 transition-colors inline-flex items-center gap-1.5 cursor-pointer text-xs" title="Acceso al Panel de Administración">
+          <svg class="w-3.5 h-3.5 text-mint-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          <span>Administrador</span>
+        </button>
       </div>
 
       <!-- Copyright Statement -->
@@ -2598,6 +2665,51 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
     Chat on WhatsApp
   </span>
 </a>
+
+<!-- Modal de Contraseña para Administrador -->
+<div id="adminAuthModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-charcoal-950/85 backdrop-blur-md transition-opacity" onclick="closeAdminAuthModal()">
+  <div class="bg-charcoal-900 border border-charcoal-800 rounded-2xl max-w-sm w-full p-6 sm:p-7 shadow-2xl relative text-center" onclick="event.stopPropagation()">
+    <!-- Botón Cerrar -->
+    <button type="button" onclick="closeAdminAuthModal()" class="absolute top-4 right-4 text-charcoal-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-charcoal-800" aria-label="Cerrar">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+    
+    <!-- Icono de Candado / Seguridad -->
+    <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-mint-500/10 border border-mint-500/30 flex items-center justify-center text-mint-400 shadow-inner">
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+    </div>
+    
+    <h3 class="text-xl font-bold font-serif text-white mb-1">Acceso de Administrador</h3>
+    <p class="text-xs text-charcoal-400 mb-5 leading-relaxed">Ingresa la contraseña para abrir el System Dashboard</p>
+    
+    <form onsubmit="handleAdminAuthSubmit(event)" class="space-y-4">
+      <div class="text-left">
+        <label for="adminAuthPassword" class="block text-[11px] font-bold text-charcoal-300 uppercase tracking-wider mb-1.5">Contraseña</label>
+        <div class="relative">
+          <input type="password" id="adminAuthPassword" placeholder="Introduce la contraseña" required class="w-full px-4 py-2.5 bg-charcoal-950 border border-charcoal-700 rounded-xl text-white placeholder-charcoal-500 text-sm focus:outline-none focus:border-mint-500 transition-all pr-10">
+          <button type="button" onclick="toggleAdminPasswordVisibility()" class="absolute right-3 top-3 text-charcoal-400 hover:text-charcoal-200 transition-colors" title="Ver contraseña">
+            <svg id="adminEyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          </button>
+        </div>
+      </div>
+      
+      <p id="adminAuthError" class="text-xs text-rose-400 hidden font-medium text-left flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 px-3 py-2 rounded-lg">
+        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Contraseña incorrecta. Inténtalo de nuevo.</span>
+      </p>
+      
+      <div class="flex gap-2.5 pt-2">
+        <button type="button" onclick="closeAdminAuthModal()" class="w-1/2 py-2.5 px-4 rounded-xl bg-charcoal-800 hover:bg-charcoal-700 text-charcoal-300 text-xs font-semibold transition-colors">
+          Cancelar
+        </button>
+        <button type="submit" class="w-1/2 py-2.5 px-4 rounded-xl bg-mint-600 hover:bg-mint-500 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5">
+          <span>Ingresar</span>
+          <span>→</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- Legal Documents Modal (Privacy Policy & Terms of Service) -->
 <div id="legalModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-charcoal-950/80 backdrop-blur-sm transition-opacity" onclick="handleLegalBackdropClick(event)">
@@ -2893,6 +3005,62 @@ function openLightbox(src){
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('active');
   document.body.style.overflow='auto';
+}
+
+// ===== ADMIN AUTHENTICATION MODAL CONTROLLER =====
+function openAdminAuthModal() {
+  const modal = document.getElementById('adminAuthModal');
+  const input = document.getElementById('adminAuthPassword');
+  const error = document.getElementById('adminAuthError');
+  if (error) error.classList.add('hidden');
+  if (input) {
+    input.value = '';
+    input.classList.remove('border-rose-500');
+  }
+  if (modal) {
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => { if (input) input.focus(); }, 120);
+  }
+}
+
+function closeAdminAuthModal() {
+  const modal = document.getElementById('adminAuthModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = 'auto';
+  }
+}
+
+function toggleAdminPasswordVisibility() {
+  const input = document.getElementById('adminAuthPassword');
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function handleAdminAuthSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('adminAuthPassword');
+  const error = document.getElementById('adminAuthError');
+  const pass = input ? input.value.trim() : '';
+  const VALID_PASS = 'velasquez2026';
+
+  if (pass === VALID_PASS) {
+    try {
+      localStorage.setItem('vb_admin_session', 'true');
+    } catch(err) {}
+    closeAdminAuthModal();
+    window.open('/?panel=cms', '_blank');
+  } else {
+    if (error) error.classList.remove('hidden');
+    if (input) {
+      input.classList.add('border-rose-500');
+      input.focus();
+      input.select();
+    }
+  }
 }
 
 // Legal Documents Modal Controller (Privacy Policy & Terms of Service)
