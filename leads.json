@@ -44,7 +44,15 @@
     "budget": "",
     "description": "On-site pre-inspection for residential home expansion and facade remodeling.",
     "source": "Website Quote Form",
-    "notes": "",
+    "notes": "Gate code is #4520.",
+    "visitRequested": true,
+    "visitDate": "2026-10-24",
+    "visitTimeSlot": "Afternoon (12:00 PM - 4:00 PM)",
+    "visitAddress": "4520 Meridian Hills Blvd",
+    "visitCity": "Indianapolis, IN",
+    "visitZip": "46228",
+    "visitNotes": "Gate code is #4520.",
+    "visitStatus": "Confirmed",
     "history": [
       {
         "timestamp": "2026-10-10T18:36:03.491Z",
@@ -91,6 +99,14 @@
     "description": "Full kitchen remodeling, knocking down partition wall to create open concept, quartz countertops, and Hardie board exterior touch-up.",
     "source": "Direct Phone / Website Referral",
     "notes": "On-site visit confirmed for Thursday at 10:00 AM with Project Manager.",
+    "visitRequested": true,
+    "visitDate": "2026-10-22",
+    "visitTimeSlot": "Morning (8:00 AM - 12:00 PM)",
+    "visitAddress": "8420 Spring Mill Rd",
+    "visitCity": "Carmel, IN",
+    "visitZip": "46032",
+    "visitNotes": "On-site consultation with Project Manager.",
+    "visitStatus": "Confirmed",
     "history": [
       {
         "timestamp": "2026-10-06T11:15:00.000Z",

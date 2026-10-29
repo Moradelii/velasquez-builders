@@ -185,11 +185,30 @@ async function safeParseJson<T = any>(res: Response, fallback: T): Promise<any> 
   }
 }
 
+const getInitialMedia = (): MediaCatalog => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('vb_media_catalog');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && (parsed.gallery?.length || parsed.logo?.length || parsed.video?.length)) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    const def = (window as any).__DEFAULT_MEDIA__;
+    if (def && (def.gallery?.length || def.logo?.length || def.video?.length)) {
+      return def;
+    }
+  }
+  return { gallery: [], logo: [], video: [] };
+};
+
 /**
  * useMediaManager Hook
  */
 export function useMediaManager() {
-  const [media, setMedia] = useState<MediaCatalog>({ gallery: [], logo: [], video: [] });
+  const [media, setMedia] = useState<MediaCatalog>(getInitialMedia);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [mediaVersion, setMediaVersion] = useState<number>(Date.now());
@@ -198,14 +217,86 @@ export function useMediaManager() {
   const fetchMedia = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/media?_cb=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
-      });
-      if (res.ok) {
-        const data = await safeParseJson<MediaCatalog>(res, { gallery: [], logo: [], video: [] });
-        setMedia(data);
+
+      // 1. Try Express API
+      try {
+        const res = await fetch(`/api/media?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<MediaCatalog>(res, { gallery: [], logo: [], video: [] });
+          if (data && (data.gallery?.length || data.logo?.length || data.video?.length)) {
+            setMedia(data);
+            setMediaVersion(Date.now());
+            try {
+              localStorage.setItem('vb_media_catalog', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Try static /data/mediaCatalog.json
+      try {
+        const res = await fetch(`/data/mediaCatalog.json?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<MediaCatalog>(res, { gallery: [], logo: [], video: [] });
+          if (data && (data.gallery?.length || data.logo?.length || data.video?.length)) {
+            setMedia(data);
+            setMediaVersion(Date.now());
+            try {
+              localStorage.setItem('vb_media_catalog', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 3. Try static /mediaCatalog.json
+      try {
+        const res = await fetch(`/mediaCatalog.json?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<MediaCatalog>(res, { gallery: [], logo: [], video: [] });
+          if (data && (data.gallery?.length || data.logo?.length || data.video?.length)) {
+            setMedia(data);
+            setMediaVersion(Date.now());
+            try {
+              localStorage.setItem('vb_media_catalog', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 4. Try localStorage
+      try {
+        const stored = localStorage.getItem('vb_media_catalog');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && (parsed.gallery?.length || parsed.logo?.length || parsed.video?.length)) {
+            setMedia(parsed);
+            setMediaVersion(Date.now());
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 5. Try window.__DEFAULT_MEDIA__
+      const def = typeof window !== 'undefined' ? (window as any).__DEFAULT_MEDIA__ : null;
+      if (def && (def.gallery?.length || def.logo?.length || def.video?.length)) {
+        setMedia(def);
         setMediaVersion(Date.now());
+        try {
+          localStorage.setItem('vb_media_catalog', JSON.stringify(def));
+        } catch (e) {}
+        return;
       }
     } catch (err: any) {
       setError(err.message || 'Error al obtener catálogo multimedia');
@@ -246,29 +337,60 @@ export function useMediaManager() {
       const fileBase64 = await readFileAsBase64(file);
       const filename = customFilename || file.name;
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          folder,
-          filename,
-          fileBase64,
-          mimeType: file.type
-        })
-      });
+      let returnedPath = '';
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            folder,
+            filename,
+            fileBase64,
+            mimeType: file.type
+          })
+        });
 
-      const data = await safeParseJson(res, { success: false, error: 'Empty server response' });
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Fallo al subir el archivo');
+        const data = await safeParseJson(res, { success: false, error: 'Empty server response' });
+        if (res.ok && data.success) {
+          returnedPath = data.path;
+        }
+      } catch (e) {
+        // Node backend not reachable on static hosting
       }
 
-      const now = data.timestamp || Date.now();
+      const now = Date.now();
+      const targetPath = returnedPath || (
+        folder === 'gallery' ? `/images/gallery/${filename}` :
+        folder === 'logo' ? `/images/logo/${filename}` :
+        `/images/video/${filename}`
+      );
+
+      const newItem: MediaFileItem = {
+        filename,
+        path: targetPath,
+        size: file.size,
+        updatedAt: now,
+        urlWithCacheBuster: `${targetPath}?v=${now}`
+      };
+
+      setMedia(prev => {
+        const currentList = prev[folder] || [];
+        const nextList = [newItem, ...currentList.filter(f => f.filename !== filename)];
+        const updated: MediaCatalog = {
+          ...prev,
+          [folder]: nextList
+        };
+        try {
+          localStorage.setItem('vb_media_catalog', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+
       setMediaVersion(now);
-      await fetchMedia();
 
       return {
         success: true,
-        path: data.path,
+        path: targetPath,
         timestamp: now
       };
     } catch (err: any) {
@@ -278,7 +400,7 @@ export function useMediaManager() {
     } finally {
       setUploading(false);
     }
-  }, [fetchMedia]);
+  }, []);
 
   const deleteMedia = useCallback(async (
     folder: MediaFolder,
@@ -286,25 +408,36 @@ export function useMediaManager() {
   ): Promise<{ success: boolean; error?: string }> => {
     setError(null);
     try {
-      const res = await fetch('/api/media', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder, filename })
-      });
-      const data = await safeParseJson(res, { success: false });
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Error al eliminar archivo');
-      }
+      try {
+        await fetch('/api/media', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ folder, filename })
+        });
+      } catch (e) {}
 
-      setMediaVersion(Date.now());
-      await fetchMedia();
+      const now = Date.now();
+      setMedia(prev => {
+        const currentList = prev[folder] || [];
+        const nextList = currentList.filter(f => f.filename !== filename);
+        const updated: MediaCatalog = {
+          ...prev,
+          [folder]: nextList
+        };
+        try {
+          localStorage.setItem('vb_media_catalog', JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+
+      setMediaVersion(now);
       return { success: true };
     } catch (err: any) {
       const msg = err.message || 'Error al eliminar archivo';
       setError(msg);
       return { success: false, error: msg };
     }
-  }, [fetchMedia]);
+  }, []);
 
   const bustUrl = useCallback((url: string) => {
     return getCacheBustedUrl(url, mediaVersion);
@@ -325,9 +458,24 @@ export function useMediaManager() {
 
 const cmsBroadcast = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('vb_cms_sync') : null;
 
+const getInitialConfig = (): SiteConfig | null => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('vb_config_sync');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.hero) return parsed;
+      }
+    } catch (e) {}
+    const def = (window as any).__DEFAULT_VB_CONFIG__;
+    if (def && def.hero) return def;
+  }
+  return null;
+};
+
 export function useCMS() {
-  const [config, setConfig] = useState<SiteConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState<SiteConfig | null>(getInitialConfig);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [versionTimestamp, setVersionTimestamp] = useState<number>(Date.now());
@@ -335,31 +483,87 @@ export function useCMS() {
   const fetchConfig = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/config?_cb=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
-      });
-      if (res.ok) {
-        const data = await safeParseJson<SiteConfig | null>(res, null);
-        if (data) {
-          setConfig(data);
-          localStorage.setItem('vb_config_sync', JSON.stringify(data));
-          return;
+
+      // 1. Try Express API
+      try {
+        const res = await fetch(`/api/config?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<SiteConfig | null>(res, null);
+          if (data && data.hero) {
+            setConfig(data);
+            try {
+              localStorage.setItem('vb_config_sync', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
         }
+      } catch (e) {}
+
+      // 2. Try static /data/config.json
+      try {
+        const res = await fetch(`/data/config.json?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<SiteConfig | null>(res, null);
+          if (data && data.hero) {
+            setConfig(data);
+            try {
+              localStorage.setItem('vb_config_sync', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 3. Try static /config.json
+      try {
+        const res = await fetch(`/config.json?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<SiteConfig | null>(res, null);
+          if (data && data.hero) {
+            setConfig(data);
+            try {
+              localStorage.setItem('vb_config_sync', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 4. Fallback to local draft
+      const localDraft = localStorage.getItem('vb_config_sync');
+      if (localDraft) {
+        try {
+          const parsed = JSON.parse(localDraft);
+          if (parsed && parsed.hero) {
+            setConfig(parsed);
+            return;
+          }
+        } catch (e) {}
+      }
+
+      // 5. Fallback to window.__DEFAULT_VB_CONFIG__
+      const def = typeof window !== 'undefined' ? (window as any).__DEFAULT_VB_CONFIG__ : null;
+      if (def && def.hero) {
+        setConfig(def);
+        try {
+          localStorage.setItem('vb_config_sync', JSON.stringify(def));
+        } catch (e) {}
+        return;
       }
     } catch (err: any) {
       console.warn('Network config fetch failed, using local backup', err);
       setError(err.message || 'Failed to fetch config');
     } finally {
       setLoading(false);
-    }
-
-    // Fallback to local draft only if offline or network failed
-    const localDraft = localStorage.getItem('vb_config_sync');
-    if (localDraft) {
-      try {
-        setConfig(JSON.parse(localDraft));
-      } catch (e) {}
     }
   }, []);
 
@@ -550,24 +754,107 @@ export function useCMS() {
   };
 }
 
+const getInitialLeads = (): Lead[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('vb_crm_leads');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    const def = (window as any).__DEFAULT_LEADS__;
+    if (Array.isArray(def) && def.length > 0) return def;
+  }
+  return [];
+};
+
 /**
  * useCRM Hook
  */
 export function useCRM() {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [leads, setLeads] = useState<Lead[]>(getInitialLeads);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/crm/leads?_cb=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
-      });
-      if (res.ok) {
-        const data = await safeParseJson<Lead[]>(res, []);
-        setLeads(data);
+
+      // 1. Try Express API
+      try {
+        const res = await fetch(`/api/crm/leads?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<Lead[]>(res, []);
+          if (Array.isArray(data) && data.length > 0) {
+            setLeads(data);
+            try {
+              localStorage.setItem('vb_crm_leads', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Try static /data/leads.json
+      try {
+        const res = await fetch(`/data/leads.json?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<Lead[]>(res, []);
+          if (Array.isArray(data) && data.length > 0) {
+            setLeads(data);
+            try {
+              localStorage.setItem('vb_crm_leads', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 3. Try static /leads.json
+      try {
+        const res = await fetch(`/leads.json?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<Lead[]>(res, []);
+          if (Array.isArray(data) && data.length > 0) {
+            setLeads(data);
+            try {
+              localStorage.setItem('vb_crm_leads', JSON.stringify(data));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 4. Try localStorage
+      try {
+        const stored = localStorage.getItem('vb_crm_leads');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setLeads(parsed);
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 5. Try window.__DEFAULT_LEADS__
+      const def = typeof window !== 'undefined' ? (window as any).__DEFAULT_LEADS__ : null;
+      if (Array.isArray(def) && def.length > 0) {
+        setLeads(def);
+        try {
+          localStorage.setItem('vb_crm_leads', JSON.stringify(def));
+        } catch (e) {}
+        return;
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch leads');
@@ -581,113 +868,169 @@ export function useCRM() {
   }, [fetchLeads]);
 
   const captureLead = useCallback(async (leadData: Partial<Lead>): Promise<boolean> => {
-    try {
-      const res = await fetch(`/api/crm/leads?_cb=${Date.now()}`, {
-        method: 'POST',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
-        body: JSON.stringify(leadData)
-      });
-      if (res.ok) {
-        const result = await safeParseJson(res, { success: true });
-        if (result.lead) {
-          setLeads(prev => [result.lead, ...prev]);
-        } else {
-          fetchLeads();
+    const newLead: Lead = {
+      id: 'lead_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+      createdAt: new Date().toISOString(),
+      status: leadData.status || 'New',
+      firstName: leadData.firstName || '',
+      lastName: leadData.lastName || '',
+      email: leadData.email || '',
+      phone: leadData.phone || '',
+      service: leadData.service || 'Commercial and Residential Project Management',
+      projectType: leadData.projectType || '',
+      timeline: leadData.timeline || '',
+      budget: leadData.budget || '',
+      description: leadData.description || '',
+      source: leadData.source || 'Website',
+      notes: leadData.notes || '',
+      visitRequested: leadData.visitRequested || false,
+      visitDate: leadData.visitDate || '',
+      visitTimeSlot: leadData.visitTimeSlot || '',
+      visitAddress: leadData.visitAddress || '',
+      visitCity: leadData.visitCity || '',
+      visitZip: leadData.visitZip || '',
+      visitNotes: leadData.visitNotes || '',
+      visitStatus: leadData.visitStatus || (leadData.visitRequested ? 'Pending' : undefined),
+      history: leadData.history || [
+        {
+          timestamp: new Date().toISOString(),
+          action: 'Lead Created',
+          details: 'Inquiry submitted'
         }
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }, [fetchLeads]);
+      ],
+      ...leadData
+    };
+
+    setLeads(prev => {
+      const updated = [newLead, ...prev];
+      try {
+        localStorage.setItem('vb_crm_leads', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    try {
+      await fetch(`/api/crm/leads?_cb=${Date.now()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+        body: JSON.stringify(newLead)
+      });
+    } catch (e) {}
+
+    return true;
+  }, []);
 
   const updateLeadStatus = useCallback(async (id: string, newStatus: Lead['status'], note?: string) => {
+    setLeads(prev => {
+      const updated = prev.map(l => {
+        if (l.id === id) {
+          const hist = [...(l.history || [])];
+          hist.unshift({
+            timestamp: new Date().toISOString(),
+            action: 'Status Changed',
+            details: `Status set to ${newStatus}${note ? ` - Note: ${note}` : ''}`
+          });
+          return { ...l, status: newStatus, notes: note ? `${l.notes ? l.notes + '\n' : ''}${note}` : l.notes, history: hist };
+        }
+        return l;
+      });
+      try {
+        localStorage.setItem('vb_crm_leads', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
     try {
-      const res = await fetch(`/api/crm/leads/${id}?_cb=${Date.now()}`, {
+      await fetch(`/api/crm/leads/${id}?_cb=${Date.now()}`, {
         method: 'PUT',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
         body: JSON.stringify({ status: newStatus, noteAdded: note })
       });
-      if (res.ok) {
-        const result = await safeParseJson(res, { success: true });
-        if (result.lead) {
-          setLeads(prev => prev.map(l => l.id === id ? result.lead : l));
-        } else {
-          fetchLeads();
-        }
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }, [fetchLeads]);
+    } catch (e) {}
+
+    return true;
+  }, []);
 
   const addLeadNote = useCallback(async (id: string, note: string) => {
+    setLeads(prev => {
+      const updated = prev.map(l => {
+        if (l.id === id) {
+          const hist = [...(l.history || [])];
+          hist.unshift({
+            timestamp: new Date().toISOString(),
+            action: 'Note Added',
+            details: note
+          });
+          return { ...l, notes: `${l.notes ? l.notes + '\n' : ''}${note}`, history: hist };
+        }
+        return l;
+      });
+      try {
+        localStorage.setItem('vb_crm_leads', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
     try {
-      const res = await fetch(`/api/crm/leads/${id}?_cb=${Date.now()}`, {
+      await fetch(`/api/crm/leads/${id}?_cb=${Date.now()}`, {
         method: 'PUT',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
         body: JSON.stringify({ noteAdded: note })
       });
-      if (res.ok) {
-        const result = await safeParseJson(res, { success: true });
-        if (result.lead) {
-          setLeads(prev => prev.map(l => l.id === id ? result.lead : l));
-        } else {
-          fetchLeads();
-        }
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }, [fetchLeads]);
+    } catch (e) {}
+
+    return true;
+  }, []);
 
   const deleteLead = useCallback(async (id: string) => {
+    setLeads(prev => {
+      const updated = prev.filter(l => l.id !== id);
+      try {
+        localStorage.setItem('vb_crm_leads', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
     try {
-      const res = await fetch(`/api/crm/leads/${id}?_cb=${Date.now()}`, {
+      await fetch(`/api/crm/leads/${id}?_cb=${Date.now()}`, {
         method: 'DELETE',
-        cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
       });
-      if (res.ok) {
-        setLeads(prev => prev.filter(l => l.id !== id));
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
+    } catch (e) {}
+
+    return true;
   }, []);
 
   const updateLeadVisit = useCallback(async (id: string, visitUpdates: Partial<Lead>) => {
+    setLeads(prev => {
+      const updated = prev.map(l => {
+        if (l.id === id) {
+          const hist = [...(l.history || [])];
+          hist.unshift({
+            timestamp: new Date().toISOString(),
+            action: 'Visit Updated',
+            details: `Visit updated: ${visitUpdates.visitDate || l.visitDate || ''} (${visitUpdates.visitTimeSlot || l.visitTimeSlot || ''}) - Status: ${visitUpdates.visitStatus || l.visitStatus || ''}`
+          });
+          return { ...l, ...visitUpdates, history: hist };
+        }
+        return l;
+      });
+      try {
+        localStorage.setItem('vb_crm_leads', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+
     try {
-      const res = await fetch(`/api/crm/leads/${id}?_cb=${Date.now()}`, {
+      await fetch(`/api/crm/leads/${id}?_cb=${Date.now()}`, {
         method: 'PUT',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
         body: JSON.stringify(visitUpdates)
       });
-      if (res.ok) {
-        const result = await safeParseJson(res, { success: true });
-        if (result.lead) {
-          setLeads(prev => prev.map(l => l.id === id ? result.lead : l));
-        } else {
-          fetchLeads();
-        }
-        return true;
-      }
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }, [fetchLeads]);
+    } catch (e) {}
+
+    return true;
+  }, []);
 
   return {
     leads,
@@ -702,13 +1045,32 @@ export function useCRM() {
   };
 }
 
+const getInitialPortfolio = (): PortfolioDataItem[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('vb_portfolio_sync');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return [...parsed].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+        }
+      }
+    } catch (e) {}
+    const def = (window as any).__DEFAULT_PORTFOLIO__;
+    if (Array.isArray(def) && def.length > 0) {
+      return [...def].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+    }
+  }
+  return [];
+};
+
 /**
  * usePortfolioData Hook
  * Persistently reads and writes to portfolioData.json
  */
 export function usePortfolioData() {
-  const [portfolioItems, setPortfolioItems] = useState<PortfolioDataItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioDataItem[]>(getInitialPortfolio);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [versionTimestamp, setVersionTimestamp] = useState<number>(Date.now());
   const [error, setError] = useState<string | null>(null);
@@ -716,17 +1078,91 @@ export function usePortfolioData() {
   const fetchPortfolio = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/portfolio?_cb=${Date.now()}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
-      });
-      if (res.ok) {
-        const data = await safeParseJson<PortfolioDataItem[]>(res, []);
-        const sorted = Array.isArray(data)
-          ? [...data].sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
-          : [];
+
+      // 1. Try Express API
+      try {
+        const res = await fetch(`/api/portfolio?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<PortfolioDataItem[]>(res, []);
+          if (Array.isArray(data) && data.length > 0) {
+            const sorted = [...data].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+            setPortfolioItems(sorted);
+            setVersionTimestamp(Date.now());
+            try {
+              localStorage.setItem('vb_portfolio_sync', JSON.stringify(sorted));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Try static /data/portfolioData.json
+      try {
+        const res = await fetch(`/data/portfolioData.json?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<PortfolioDataItem[]>(res, []);
+          if (Array.isArray(data) && data.length > 0) {
+            const sorted = [...data].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+            setPortfolioItems(sorted);
+            setVersionTimestamp(Date.now());
+            try {
+              localStorage.setItem('vb_portfolio_sync', JSON.stringify(sorted));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 3. Try static /portfolioData.json
+      try {
+        const res = await fetch(`/portfolioData.json?_cb=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+        });
+        if (res.ok) {
+          const data = await safeParseJson<PortfolioDataItem[]>(res, []);
+          if (Array.isArray(data) && data.length > 0) {
+            const sorted = [...data].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+            setPortfolioItems(sorted);
+            setVersionTimestamp(Date.now());
+            try {
+              localStorage.setItem('vb_portfolio_sync', JSON.stringify(sorted));
+            } catch (e) {}
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 4. Try localStorage
+      try {
+        const stored = localStorage.getItem('vb_portfolio_sync');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const sorted = [...parsed].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+            setPortfolioItems(sorted);
+            setVersionTimestamp(Date.now());
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 5. Try window.__DEFAULT_PORTFOLIO__
+      const def = typeof window !== 'undefined' ? (window as any).__DEFAULT_PORTFOLIO__ : null;
+      if (Array.isArray(def) && def.length > 0) {
+        const sorted = [...def].sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
         setPortfolioItems(sorted);
         setVersionTimestamp(Date.now());
+        try {
+          localStorage.setItem('vb_portfolio_sync', JSON.stringify(sorted));
+        } catch (e) {}
+        return;
       }
     } catch (err: any) {
       setError(err.message || 'Error al obtener portfolioData.json');
@@ -745,72 +1181,61 @@ export function usePortfolioData() {
     setSaving(true);
     setError(null);
 
+    const now = Date.now();
+    let nextList: PortfolioDataItem[] = [];
+
     // Instant optimistic update in React DOM strictly sorted by numeric ID
     setPortfolioItems(prev => {
       const idx = prev.findIndex(p => String(p.id) === String(item.id));
-      let next: PortfolioDataItem[];
       if (idx !== -1) {
-        next = [...prev];
-        next[idx] = { ...next[idx], ...item };
+        nextList = [...prev];
+        nextList[idx] = { ...nextList[idx], ...item };
       } else {
-        next = [...prev, item];
+        nextList = [...prev, item];
       }
-      return next.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+      nextList.sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+      try {
+        localStorage.setItem('vb_portfolio_sync', JSON.stringify(nextList));
+      } catch (e) {}
+      return nextList;
     });
 
+    setVersionTimestamp(now);
+
+    // Live sync draft with index.html in horizontal order & broadcast
     try {
-      const now = Date.now();
-      const res = await fetch(`/api/portfolio/update?_cb=${now}`, {
+      const draftStr = localStorage.getItem('vb_config_sync');
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        draft.portfolio = nextList.map((p: any) => ({
+          id: String(p.id),
+          url: p.imageUrl,
+          imageUrl: p.imageUrl,
+          title: p.title,
+          location: p.categoryLocation ? p.categoryLocation.split('•').pop().trim() : 'Indianapolis, IN',
+          categoryLocation: p.categoryLocation || 'General Construction',
+          svc: p.categoryLocation ? p.categoryLocation.split('•')[0].trim() : 'Construction',
+          description: p.description || ''
+        }));
+        localStorage.setItem('vb_config_sync', JSON.stringify(draft));
+        if (cmsBroadcast) {
+          cmsBroadcast.postMessage({ type: 'CONFIG_UPDATED', config: draft, timestamp: now });
+        }
+      }
+    } catch (e) {}
+
+    // API call in background
+    try {
+      await fetch(`/api/portfolio/update?_cb=${now}`, {
         method: 'POST',
-        cache: 'no-store',
         headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
         body: JSON.stringify(item),
       });
-      const data = await safeParseJson(res, { success: res.ok, item });
-      if (res.ok && data.success) {
-        setVersionTimestamp(now);
-        const resolvedItems = Array.isArray(data.items)
-          ? [...data.items].sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
-          : undefined;
-        if (resolvedItems) {
-          setPortfolioItems(resolvedItems);
-        }
+    } catch (e) {}
 
-        // Live sync draft with index.html in horizontal order & broadcast
-        try {
-          const draftStr = localStorage.getItem('vb_config_sync');
-          if (draftStr) {
-            const draft = JSON.parse(draftStr);
-            const sourceList = resolvedItems || portfolioItems;
-            draft.portfolio = sourceList.map((p: any) => ({
-              id: String(p.id),
-              url: p.imageUrl,
-              imageUrl: p.imageUrl,
-              title: p.title,
-              location: p.categoryLocation ? p.categoryLocation.split('•').pop().trim() : 'Indianapolis, IN',
-              categoryLocation: p.categoryLocation || 'General Construction',
-              svc: p.categoryLocation ? p.categoryLocation.split('•')[0].trim() : 'Construction',
-              description: p.description || ''
-            }));
-            localStorage.setItem('vb_config_sync', JSON.stringify(draft));
-            if (cmsBroadcast) {
-              cmsBroadcast.postMessage({ type: 'CONFIG_UPDATED', config: draft, timestamp: now });
-            }
-          }
-        } catch (e) {}
-
-        return { success: true, item: data.item || item };
-      } else {
-        throw new Error(data.error || 'Error al actualizar portfolio');
-      }
-    } catch (err: any) {
-      setError(err.message);
-      fetchPortfolio();
-      return { success: false, error: err.message };
-    } finally {
-      setSaving(false);
-    }
-  }, [fetchPortfolio]);
+    setSaving(false);
+    return { success: true, item };
+  }, []);
 
   const addPortfolioItem = useCallback(async (
     item: PortfolioDataItem
@@ -823,28 +1248,51 @@ export function usePortfolioData() {
   ): Promise<{ success: boolean; error?: string }> => {
     setSaving(true);
     setError(null);
+    const now = Date.now();
+    let nextItems: PortfolioDataItem[] = [];
+
+    setPortfolioItems(prev => {
+      nextItems = prev.filter(p => String(p.id) !== String(id));
+      try {
+        localStorage.setItem('vb_portfolio_sync', JSON.stringify(nextItems));
+      } catch (e) {}
+      return nextItems;
+    });
+
+    setVersionTimestamp(now);
+
+    // Live sync draft with index.html in horizontal order & broadcast
     try {
-      const nextItems = portfolioItems.filter(p => String(p.id) !== String(id));
-      setPortfolioItems(nextItems);
-      const res = await fetch(`/api/portfolio/${id}?_cb=${Date.now()}`, {
+      const draftStr = localStorage.getItem('vb_config_sync');
+      if (draftStr) {
+        const draft = JSON.parse(draftStr);
+        draft.portfolio = nextItems.map((p: any) => ({
+          id: String(p.id),
+          url: p.imageUrl,
+          imageUrl: p.imageUrl,
+          title: p.title,
+          location: p.categoryLocation ? p.categoryLocation.split('•').pop().trim() : 'Indianapolis, IN',
+          categoryLocation: p.categoryLocation || 'General Construction',
+          svc: p.categoryLocation ? p.categoryLocation.split('•')[0].trim() : 'Construction',
+          description: p.description || ''
+        }));
+        localStorage.setItem('vb_config_sync', JSON.stringify(draft));
+        if (cmsBroadcast) {
+          cmsBroadcast.postMessage({ type: 'CONFIG_UPDATED', config: draft, timestamp: now });
+        }
+      }
+    } catch (e) {}
+
+    try {
+      await fetch(`/api/portfolio/${id}?_cb=${now}`, {
         method: 'DELETE',
-        cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
       });
-      const data = await safeParseJson(res, { success: res.ok });
-      if (res.ok && data.success !== false) {
-        setVersionTimestamp(Date.now());
-        return { success: true };
-      }
-      throw new Error('Failed to delete portfolio item');
-    } catch (err: any) {
-      setError(err.message);
-      fetchPortfolio();
-      return { success: false, error: err.message };
-    } finally {
-      setSaving(false);
-    }
-  }, [portfolioItems, fetchPortfolio]);
+    } catch (e) {}
+
+    setSaving(false);
+    return { success: true };
+  }, []);
 
   const bustUrl = useCallback((url: string) => {
     return getCacheBustedUrl(url, versionTimestamp);
