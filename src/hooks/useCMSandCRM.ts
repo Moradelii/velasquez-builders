@@ -24,6 +24,16 @@ export interface PortfolioDataItem {
   updatedAt?: string;
 }
 
+export interface PortfolioVideoItem {
+  id: string;
+  title: string;
+  categoryLocation: string;
+  videoUrl: string;
+  posterUrl?: string;
+  description?: string;
+  badge?: string;
+}
+
 export interface HomeProject {
   id: string;
   title: string;
@@ -123,6 +133,7 @@ export interface SiteConfig {
     description?: string;
     projects: HomeProject[];
   };
+  portfolioVideos?: PortfolioVideoItem[];
   [key: string]: any;
 }
 

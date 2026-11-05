@@ -5,6 +5,7 @@ import {
   useMediaManager,
   usePortfolioData,
   PortfolioDataItem,
+  PortfolioVideoItem,
   HomeProject,
   ServiceItem,
   ProcessStep,
@@ -54,7 +55,11 @@ import {
   Settings,
   CreditCard,
   MessageSquare,
-  Building2
+  Building2,
+  Video,
+  Play,
+  Maximize2,
+  Film
 } from 'lucide-react';
 
 interface NativeCmsCrmPanelProps {
@@ -68,6 +73,7 @@ type NavSection =
   | 'hero'
   | 'services'
   | 'portfolio'
+  | 'portfolioVideos'
   | 'homes'
   | 'process'
   | 'team'
@@ -130,6 +136,62 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
 
   // Homes Gallery Quick-Picker State: { homeIdx: number, slot: 'main' | number } | null
   const [homeGalleryPicker, setHomeGalleryPicker] = useState<{ homeIdx: number; slot: 'main' | number } | null>(null);
+
+  // Portfolio SubTab & 9:16 Video Management State
+  const [portfolioSubTab, setPortfolioSubTab] = useState<'gallery' | 'videos'>('gallery');
+  const [previewVideoModal, setPreviewVideoModal] = useState<PortfolioVideoItem | null>(null);
+
+  const defaultPortfolioVideos: PortfolioVideoItem[] = [
+    {
+      id: 'video-1',
+      title: 'Custom Luxury Home Walkthrough',
+      categoryLocation: 'New Construction • Carmel, IN',
+      videoUrl: '/images/video/video-1.mp4',
+      posterUrl: '/images/gallery/01.webp',
+      description: 'On-site vertical walkthrough showing open-concept framing, high ceilings, and luxury architectural finishes.',
+      badge: 'Walkthrough 9:16'
+    },
+    {
+      id: 'video-2',
+      title: 'Master Carpentry & Siding Installation',
+      categoryLocation: 'Exterior Envelope • Fishers, IN',
+      videoUrl: '/images/video/video-2.mp4',
+      posterUrl: '/images/gallery/02.webp',
+      description: 'Step-by-step progress on James Hardie fiber cement siding installation and seamless roofline gutter integration.',
+      badge: 'Craftsmanship 9:16'
+    },
+    {
+      id: 'video-3',
+      title: 'Commercial Space Renovation & Framing',
+      categoryLocation: 'Commercial Management • Indianapolis, IN',
+      videoUrl: '/images/video/video-3.mp4',
+      posterUrl: '/images/gallery/03.webp',
+      description: 'Commercial general contracting project overview highlighting structural steel reinforcement and interior buildout.',
+      badge: 'Commercial 9:16'
+    }
+  ];
+
+  const portfolioVideosToDisplay: PortfolioVideoItem[] = (config?.portfolioVideos && config.portfolioVideos.length > 0)
+    ? config.portfolioVideos
+    : defaultPortfolioVideos;
+
+  const updateSinglePortfolioVideo = (idx: number, updates: Partial<PortfolioVideoItem>) => {
+    if (!config) return;
+    const currentList = config.portfolioVideos && config.portfolioVideos.length > 0
+      ? [...config.portfolioVideos]
+      : [...defaultPortfolioVideos];
+
+    while (currentList.length <= idx) {
+      currentList.push({ ...defaultPortfolioVideos[currentList.length % 3], id: `video-${currentList.length + 1}` });
+    }
+
+    currentList[idx] = { ...currentList[idx], ...updates };
+    saveConfig({
+      ...config,
+      portfolioVideos: currentList
+    });
+    setNotice({ type: 'success', message: `Saved changes to Video #${idx + 1}.` });
+  };
 
   // =========================================================================
   // 1. MODAL: "Edit portfolio" (Faithful to design)
@@ -290,6 +352,12 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
           saveConfig({ ...config, hero: { ...config.hero, imageUrl: res.path } });
         } else if (targetFieldForUpload === 'heroVideo') {
           saveConfig({ ...config, hero: { ...config.hero, videoUrl: res.path } });
+        } else if (targetFieldForUpload.startsWith('portfolioVideo_')) {
+          const vIdx = parseInt(targetFieldForUpload.split('_')[1], 10);
+          updateSinglePortfolioVideo(vIdx, { videoUrl: res.path });
+        } else if (targetFieldForUpload.startsWith('portfolioVideoPoster_')) {
+          const vIdx = parseInt(targetFieldForUpload.split('_')[1], 10);
+          updateSinglePortfolioVideo(vIdx, { posterUrl: res.path });
         }
       }
 
@@ -530,6 +598,7 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
                 { id: 'hero', label: 'Hero Section', icon: <Zap className="w-4 h-4 text-amber-400" /> },
                 { id: 'services', label: 'Services', icon: <Wrench className="w-4 h-4 text-blue-400" /> },
                 { id: 'portfolio', label: 'Portfolio', icon: <Image className="w-4 h-4 text-emerald-400" /> },
+                { id: 'portfolioVideos', label: 'Portfolio Videos (9:16)', icon: <Video className="w-4 h-4 text-rose-400" /> },
                 { id: 'homes', label: 'Homes We’ve Built', icon: <Home className="w-4 h-4 text-emerald-400" /> },
                 { id: 'process', label: 'Process', icon: <RefreshCw className="w-4 h-4 text-cyan-400" /> },
                 { id: 'team', label: 'Our Team', icon: <Users className="w-4 h-4 text-purple-400" /> },
@@ -540,7 +609,11 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
               ].map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id as NavSection)}
+                  onClick={() => {
+                    setActiveTab(item.id as NavSection);
+                    if (item.id === 'portfolio') setPortfolioSubTab('gallery');
+                    if (item.id === 'portfolioVideos') setPortfolioSubTab('videos');
+                  }}
                   className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all ${
                     activeTab === item.id
                       ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40 shadow-sm'
@@ -552,6 +625,11 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
                   {item.id === 'portfolio' && (
                     <span className="ml-auto text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono">
                       {portfolioItems.length}
+                    </span>
+                  )}
+                  {item.id === 'portfolioVideos' && (
+                    <span className="ml-auto text-[10px] bg-slate-800 text-rose-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                      {config?.portfolioVideos?.length || 3}
                     </span>
                   )}
                   {item.id === 'homes' && config?.homes?.projects && (
@@ -1180,121 +1258,392 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
           {/* =================================================================
               VIEW: PORTFOLIO
           ================================================================== */}
-          {activeTab === 'portfolio' && (
-            <div className="max-w-6xl mx-auto space-y-5">
-              {/* Header & Controls */}
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Image className="w-5 h-5 text-emerald-400" />
-                    <span>Portfolio Projects ({portfolioItems.length})</span>
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Backed by <code className="text-emerald-400 font-mono">portfolioData.json</code>. Click [Edit] to open the custom modal.
-                  </p>
-                </div>
+          {/* =================================================================
+              VIEW: PORTFOLIO & PORTFOLIO VIDEOS (9:16 REELS)
+          ================================================================== */}
+          {(activeTab === 'portfolio' || activeTab === 'portfolioVideos') && (
+            <div className="max-w-6xl mx-auto space-y-6">
+              {/* Tab Switcher: Photos vs Videos */}
+              <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
                 <button
-                  onClick={handleOpenNewPortfolioModal}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-md"
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('portfolio');
+                    setPortfolioSubTab('gallery');
+                  }}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeTab === 'portfolio' && portfolioSubTab === 'gallery'
+                      ? 'bg-emerald-600 text-white shadow-md'
+                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                  }`}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Project</span>
+                  <Image className="w-4 h-4" />
+                  <span>Projects Gallery ({portfolioItems.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('portfolioVideos');
+                    setPortfolioSubTab('videos');
+                  }}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
+                    activeTab === 'portfolioVideos' || portfolioSubTab === 'videos'
+                      ? 'bg-rose-600 text-white shadow-md'
+                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                  }`}
+                >
+                  <Video className="w-4 h-4" />
+                  <span>Portfolio Videos (9:16 Reels) (3)</span>
                 </button>
               </div>
 
-              {/* Search & Filter */}
-              <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text"
-                  placeholder="Search projects by title, category, or description..."
-                  value={portfolioSearch}
-                  onChange={(e) => setPortfolioSearch(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-400"
-                />
-                <select
-                  value={selectedPortfolioCategory}
-                  onChange={(e) => setSelectedPortfolioCategory(e.target.value)}
-                  className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300"
-                >
-                  <option value="ALL">All Categories</option>
-                  <option value="Construction">Construction & Additions</option>
-                  <option value="Painting">Painting</option>
-                  <option value="Decking">Decking</option>
-                  <option value="Siding">Siding</option>
-                  <option value="Renovations">Renovations</option>
-                </select>
-              </div>
+              {/* VIEW 1: PROJECTS GALLERY */}
+              {activeTab === 'portfolio' && portfolioSubTab === 'gallery' && (
+                <div className="space-y-5">
+                  {/* Header & Controls */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <Image className="w-5 h-5 text-emerald-400" />
+                        <span>Portfolio Projects ({portfolioItems.length})</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Backed by <code className="text-emerald-400 font-mono">portfolioData.json</code>. Click [Edit] to open the custom modal.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleOpenNewPortfolioModal}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-2 shadow-md"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Project</span>
+                    </button>
+                  </div>
 
-              {/* Portfolio Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredPortfolio.map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col group hover:border-slate-700 transition-all shadow-sm"
-                  >
-                    <div className="h-44 bg-slate-950 relative overflow-hidden">
-                      <img
-                        src={getCacheBustedUrl(item.imageUrl, portfolioVersion)}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/images/gallery/01.webp';
-                        }}
-                      />
-                      <div className="absolute top-2.5 left-2.5">
-                        <span className="px-2 py-0.5 bg-slate-900/90 text-white text-[10px] font-mono rounded backdrop-blur">
-                          #{item.id}
+                  {/* Search & Filter */}
+                  <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex flex-col sm:flex-row gap-3">
+                    <input
+                      type="text"
+                      placeholder="Search projects by title, category, or description..."
+                      value={portfolioSearch}
+                      onChange={(e) => setPortfolioSearch(e.target.value)}
+                      className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white placeholder-slate-400"
+                    />
+                    <select
+                      value={selectedPortfolioCategory}
+                      onChange={(e) => setSelectedPortfolioCategory(e.target.value)}
+                      className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300"
+                    >
+                      <option value="ALL">All Categories</option>
+                      <option value="Construction">Construction & Additions</option>
+                      <option value="Painting">Painting</option>
+                      <option value="Decking">Decking</option>
+                      <option value="Siding">Siding</option>
+                      <option value="Renovations">Renovations</option>
+                    </select>
+                  </div>
+
+                  {/* Portfolio Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredPortfolio.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex flex-col group hover:border-slate-700 transition-all shadow-sm"
+                      >
+                        <div className="h-44 bg-slate-950 relative overflow-hidden">
+                          <img
+                            src={getCacheBustedUrl(item.imageUrl, portfolioVersion)}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/images/gallery/01.webp';
+                            }}
+                          />
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="px-2 py-0.5 bg-slate-900/90 text-white text-[10px] font-mono rounded backdrop-blur">
+                              #{item.id}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                              {item.categoryLocation}
+                            </span>
+                            <h4 className="text-sm font-bold text-white mt-0.5 line-clamp-1">{item.title}</h4>
+                            <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                              {item.description}
+                            </p>
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenEditModal(item)}
+                                className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Edit</span>
+                              </button>
+                              <button
+                                onClick={() => triggerFileUpload('gallery', undefined, item.id)}
+                                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1"
+                                title="Replace project image (.webp / .jpeg)"
+                              >
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Image</span>
+                              </button>
+                            </div>
+
+                            <button
+                              onClick={async () => {
+                                if (window.confirm(`Delete portfolio item #${item.id} ("${item.title}")?`)) {
+                                  await deletePortfolioItem(item.id);
+                                  setNotice({ type: 'info', message: `Portfolio item #${item.id} deleted.` });
+                                }
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-950/30 rounded-lg text-xs transition-colors flex items-center justify-center"
+                              title="Delete project"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 2: PORTFOLIO VIDEOS (9:16 VERTICAL FORMAT - 3 VIDEOS) */}
+              {(activeTab === 'portfolioVideos' || portfolioSubTab === 'videos') && (
+                <div className="space-y-6">
+                  {/* Overview Header */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          <Video className="w-5 h-5 text-rose-400" />
+                          <span>Portfolio Videos • Vertical 9:16 Format</span>
+                        </h3>
+                        <span className="text-xs bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded border border-rose-500/30 font-bold">
+                          3 Videos
                         </span>
                       </div>
+                      <p className="text-xs text-slate-400 mt-1">
+                        These 3 videos appear on the Portfolio page right below the image gallery. Stored in <code className="text-rose-400 font-mono">/images/video/</code> and opened in full screen on click.
+                      </p>
                     </div>
 
-                    <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-                          {item.categoryLocation}
-                        </span>
-                        <h4 className="text-sm font-bold text-white mt-0.5 line-clamp-1">{item.title}</h4>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const confirmed = window.confirm("Reset the 3 videos to default configuration?");
+                          if (confirmed && config) {
+                            saveConfig({
+                              ...config,
+                              portfolioVideos: defaultPortfolioVideos
+                            });
+                            setNotice({ type: 'success', message: 'Restored default 3 portfolio videos.' });
+                          }
+                        }}
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Reset Defaults</span>
+                      </button>
+                    </div>
+                  </div>
 
-                      <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5">
+                  {/* 3 Video Cards */}
+                  <div className="space-y-6">
+                    {portfolioVideosToDisplay.slice(0, 3).map((video, idx) => (
+                      <div
+                        key={video.id || idx}
+                        className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-5"
+                      >
+                        {/* Header Bar */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                          <div className="flex items-center gap-2.5">
+                            <span className="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-300 font-bold text-xs flex items-center justify-center border border-rose-500/30">
+                              0{idx + 1}
+                            </span>
+                            <div>
+                              <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                                <span>Video #{idx + 1}: {video.title || 'Untitled Video'}</span>
+                                <span className="text-[10px] font-mono text-mint-400 bg-mint-500/10 px-2 py-0.5 rounded border border-mint-500/20">
+                                  Format 9:16
+                                </span>
+                              </h4>
+                              <p className="text-[11px] text-slate-400">
+                                Path: <code className="text-slate-300 font-mono">{video.videoUrl}</code>
+                              </p>
+                            </div>
+                          </div>
+
                           <button
-                            onClick={() => handleOpenEditModal(item)}
-                            className="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
+                            type="button"
+                            onClick={() => setPreviewVideoModal(video)}
+                            className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 self-start sm:self-auto shadow-xs border border-slate-700"
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            onClick={() => triggerFileUpload('gallery', undefined, item.id)}
-                            className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1"
-                            title="Replace project image (.webp / .jpeg)"
-                          >
-                            <Upload className="w-3.5 h-3.5" />
-                            <span>Image</span>
+                            <Play className="w-3.5 h-3.5 text-mint-400 fill-mint-400" />
+                            <span>Preview Fullscreen Player</span>
                           </button>
                         </div>
 
-                        <button
-                          onClick={async () => {
-                            if (window.confirm(`Delete portfolio item #${item.id} ("${item.title}")?`)) {
-                              await deletePortfolioItem(item.id);
-                              setNotice({ type: 'info', message: `Portfolio item #${item.id} deleted.` });
-                            }
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-950/30 rounded-lg text-xs transition-colors flex items-center justify-center"
-                          title="Delete project"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                          {/* 9:16 Video Preview Card */}
+                          <div className="lg:col-span-4 flex flex-col items-center">
+                            <div className="relative w-full max-w-[200px] aspect-[9/16] rounded-2xl overflow-hidden bg-black border border-slate-700 shadow-xl group">
+                              <video
+                                src={getCacheBustedUrl(video.videoUrl, portfolioVersion)}
+                                poster={getCacheBustedUrl(video.posterUrl || '/images/gallery/01.webp', portfolioVersion)}
+                                controls
+                                playsInline
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute top-2 left-2 pointer-events-none">
+                                <span className="px-2 py-0.5 rounded bg-black/80 backdrop-blur text-[10px] text-mint-400 font-bold uppercase tracking-wider border border-white/10">
+                                  {video.badge || '9:16 REEL'}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-[11px] text-slate-400 mt-2 font-mono">
+                              9:16 Vertical Video
+                            </span>
+                          </div>
+
+                          {/* Editable Details Form */}
+                          <div className="lg:col-span-8 space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                                  Video Title *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={video.title || ''}
+                                  onChange={(e) => updateSinglePortfolioVideo(idx, { title: e.target.value })}
+                                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white font-bold"
+                                  placeholder="e.g. Custom Luxury Home Walkthrough"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                                  Category &amp; Location *
+                                </label>
+                                <input
+                                  type="text"
+                                  value={video.categoryLocation || ''}
+                                  onChange={(e) => updateSinglePortfolioVideo(idx, { categoryLocation: e.target.value })}
+                                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white"
+                                  placeholder="e.g. New Construction • Carmel, IN"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                                  Badge / Reel Tag
+                                </label>
+                                <input
+                                  type="text"
+                                  value={video.badge || ''}
+                                  onChange={(e) => updateSinglePortfolioVideo(idx, { badge: e.target.value })}
+                                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                                  placeholder="e.g. Walkthrough 9:16"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                                  Poster Thumbnail (/images/gallery/...)
+                                </label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={video.posterUrl || ''}
+                                    onChange={(e) => updateSinglePortfolioVideo(idx, { posterUrl: e.target.value })}
+                                    className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                                    placeholder="/images/gallery/01.webp"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => triggerFileUpload('gallery', undefined, undefined, `portfolioVideoPoster_${idx}`)}
+                                    className="px-2.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1"
+                                    title="Upload poster image"
+                                  >
+                                    <Upload className="w-3.5 h-3.5" />
+                                    <span>Upload</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                                Video File Path (.mp4 in /images/video/) *
+                              </label>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <input
+                                  type="text"
+                                  value={video.videoUrl || ''}
+                                  onChange={(e) => updateSinglePortfolioVideo(idx, { videoUrl: e.target.value })}
+                                  className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white font-mono"
+                                  placeholder="/images/video/video-1.mp4"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => triggerFileUpload('video', undefined, undefined, `portfolioVideo_${idx}`)}
+                                    className="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 whitespace-nowrap"
+                                  >
+                                    <Upload className="w-3.5 h-3.5" />
+                                    <span>Upload MP4</span>
+                                  </button>
+                                  {media.video && media.video.length > 0 && (
+                                    <select
+                                      onChange={(e) => {
+                                        if (e.target.value) {
+                                          updateSinglePortfolioVideo(idx, { videoUrl: e.target.value });
+                                        }
+                                      }}
+                                      className="px-2.5 py-2 bg-slate-800 text-xs text-slate-200 border border-slate-700 rounded-lg"
+                                      defaultValue=""
+                                    >
+                                      <option value="" disabled>Pick MP4...</option>
+                                      {media.video.map((v) => (
+                                        <option key={v.path} value={v.path}>{v.filename}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                                Description Paragraph
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={video.description || ''}
+                                onChange={(e) => updateSinglePortfolioVideo(idx, { description: e.target.value })}
+                                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300 leading-relaxed"
+                                placeholder="Describe the on-site walkthrough or craftsmanship featured..."
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -3419,6 +3768,71 @@ export default function NativeCmsCrmPanel({ isFullScreen = false, onClose }: Nat
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================
+          MODAL: 9:16 PORTFOLIO VIDEO FULLSCREEN PREVIEW IN CMS
+      ================================================================== */}
+      {previewVideoModal && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn"
+          onClick={() => setPreviewVideoModal(null)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-3xl overflow-hidden bg-slate-950 border border-slate-700 shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '90vh' }}
+          >
+            {/* Modal Header */}
+            <div className="p-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between z-10">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                <span className="text-xs font-bold text-white truncate">
+                  {previewVideoModal.title}
+                </span>
+                <span className="text-[10px] font-mono text-mint-400 bg-mint-500/10 px-1.5 py-0.5 rounded border border-mint-500/20 whitespace-nowrap">
+                  9:16
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewVideoModal(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                title="Close preview"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Video Player 9:16 Ratio */}
+            <div className="relative aspect-[9/16] w-full bg-black flex items-center justify-center overflow-hidden">
+              <video
+                src={getCacheBustedUrl(previewVideoModal.videoUrl, portfolioVersion)}
+                poster={getCacheBustedUrl(previewVideoModal.posterUrl || '', portfolioVersion)}
+                controls
+                autoPlay
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-3 left-3 pointer-events-none">
+                <span className="px-2 py-0.5 rounded bg-black/75 backdrop-blur text-[10px] text-mint-400 font-bold uppercase tracking-wider border border-white/10">
+                  {previewVideoModal.badge || '9:16 SHOWCASE'}
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 bg-slate-900 border-t border-slate-800 text-center">
+              <p className="text-xs font-medium text-slate-300">
+                {previewVideoModal.categoryLocation || 'Custom Construction Walkthrough'}
+              </p>
+              <p className="text-[11px] text-slate-500 mt-1 truncate font-mono">
+                {previewVideoModal.videoUrl}
+              </p>
+            </div>
           </div>
         </div>
       )}

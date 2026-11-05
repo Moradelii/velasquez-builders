@@ -301,10 +301,11 @@ async function applyConfig(cfg, force = false) {
     }
   }
 
-  // ===== 3. PORTFOLIO =====
+  // ===== 3. PORTFOLIO & 9:16 VIDEOS =====
   if (cfg.portfolio?.length) {
     renderPublicPortfolio(cfg.portfolio);
   }
+  renderPortfolioVideos(cfg.portfolioVideos);
 
   // ===== 3.5. PROCESS SYNC =====
   if (cfg.process?.length) {
@@ -1326,6 +1327,168 @@ function filterPublicPortfolio(cat) {
   renderPublicPortfolio();
 }
 
+// ===== 9:16 PORTFOLIO VIDEOS ENGINE & FULLSCREEN LIGHTBOX =====
+function renderPortfolioVideos(videoList) {
+  const container = document.getElementById('portfolio-videos-grid');
+  if (!container) return;
+
+  const defaultVideos = [
+    {
+      id: 'video-1',
+      title: 'Custom Luxury Home Walkthrough',
+      categoryLocation: 'New Construction • Carmel, IN',
+      videoUrl: '/images/video/video-1.mp4',
+      posterUrl: '/images/gallery/01.webp',
+      description: 'On-site vertical walkthrough showing open-concept framing, high ceilings, and luxury architectural finishes.',
+      badge: 'Walkthrough 9:16'
+    },
+    {
+      id: 'video-2',
+      title: 'Master Carpentry & Siding Installation',
+      categoryLocation: 'Exterior Envelope • Fishers, IN',
+      videoUrl: '/images/video/video-2.mp4',
+      posterUrl: '/images/gallery/02.webp',
+      description: 'Step-by-step progress on James Hardie fiber cement siding installation and seamless roofline gutter integration.',
+      badge: 'Craftsmanship 9:16'
+    },
+    {
+      id: 'video-3',
+      title: 'Commercial Space Renovation & Framing',
+      categoryLocation: 'Commercial Management • Indianapolis, IN',
+      videoUrl: '/images/video/video-3.mp4',
+      posterUrl: '/images/gallery/03.webp',
+      description: 'Commercial general contracting project overview highlighting structural steel reinforcement and interior buildout.',
+      badge: 'Commercial 9:16'
+    }
+  ];
+
+  const rawList = videoList || currentGlobalConfig?.portfolioVideos;
+  const videos = (Array.isArray(rawList) && rawList.length > 0) ? rawList : defaultVideos;
+
+  container.innerHTML = videos.slice(0, 3).map((v, idx) => {
+    const vUrl = bustUrl(v.videoUrl || `/images/video/video-${idx+1}.mp4`);
+    const pUrl = bustUrl(v.posterUrl || `/images/gallery/0${idx+1}.webp`);
+    const title = escapeAttr(v.title || `Project Walkthrough #${idx+1}`);
+    const cat = escapeAttr(v.categoryLocation || 'Construction • Indianapolis, IN');
+    const desc = escapeAttr(v.description || 'On-site construction in vertical 9:16 format');
+    const badge = escapeAttr(v.badge || '9:16 REEL');
+
+    return `
+      <div 
+        class="relative aspect-[9/16] rounded-3xl overflow-hidden group cursor-pointer shadow-xl bg-charcoal-950 border border-charcoal-700/80 hover:border-mint-500 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-mint-900/30 flex flex-col justify-between p-6 animate-in visible d${idx % 3}"
+        onclick="openPortfolioVideoModal('${vUrl}', '${title}', '${cat}', '${desc}', '${badge}')"
+      >
+        <!-- Background Video Preview & Poster -->
+        <video 
+          class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 pointer-events-none" 
+          muted 
+          playsinline 
+          loop 
+          preload="metadata"
+          poster="${pUrl}"
+          onmouseenter="this.play().catch(()=>{})"
+          onmouseleave="this.pause(); this.currentTime = 0;"
+        >
+          <source src="${vUrl}" type="video/mp4">
+        </video>
+
+        <!-- Dark Gradient Overlays for High Text Legibility -->
+        <div class="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/40 to-black/60 opacity-80 group-hover:opacity-65 transition-opacity"></div>
+
+        <!-- Top Badges -->
+        <div class="relative z-10 flex items-center justify-between">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-charcoal-900/90 backdrop-blur-md text-mint-400 text-xs font-bold uppercase tracking-wider rounded-full border border-mint-500/30 shadow-md">
+            <span class="w-2 h-2 rounded-full bg-mint-400 animate-pulse"></span>
+            <span>${escapeHTML(v.badge || '9:16 Reel')}</span>
+          </span>
+
+          <span class="w-9 h-9 rounded-full bg-charcoal-900/90 backdrop-blur-md text-white flex items-center justify-center border border-white/20 shadow-md group-hover:bg-mint-600 transition-colors" title="Expand Fullscreen">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+          </span>
+        </div>
+
+        <!-- Center Big Play Button -->
+        <div class="relative z-10 self-center my-auto">
+          <div class="w-16 h-16 rounded-full bg-mint-600/90 text-white flex items-center justify-center shadow-2xl backdrop-blur-sm group-hover:scale-115 group-hover:bg-mint-500 transition-all duration-300 border-2 border-white/30">
+            <svg class="w-7 h-7 fill-white translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+
+        <!-- Bottom Content -->
+        <div class="relative z-10 space-y-2">
+          <span class="text-[11px] font-bold uppercase tracking-widest text-mint-400 block">${escapeHTML(v.categoryLocation || 'Construction')}</span>
+          <h3 class="text-xl font-bold font-serif text-white leading-snug group-hover:text-mint-300 transition-colors">${escapeHTML(v.title)}</h3>
+          <p class="text-xs text-charcoal-300 line-clamp-2 leading-relaxed font-normal">${escapeHTML(v.description || '')}</p>
+          <div class="pt-2 flex items-center justify-between text-xs font-bold text-mint-400">
+            <span class="flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Watch Fullscreen (9:16)</span>
+            </span>
+            <span class="group-hover:translate-x-1 transition-transform">→</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openPortfolioVideoModal(videoUrl, title, categoryLocation, description, badge) {
+  const modal = document.getElementById('portfolioVideoModal');
+  const player = document.getElementById('portfolioVideoPlayer');
+  const titleEl = document.getElementById('portfolioVideoModalTitle');
+  const catEl = document.getElementById('portfolioVideoModalCat');
+  const descEl = document.getElementById('portfolioVideoModalDesc');
+  const badgeEl = document.getElementById('portfolioVideoModalBadge');
+
+  if (modal && player) {
+    if (titleEl) titleEl.textContent = title || 'Video Walkthrough';
+    if (catEl) catEl.textContent = categoryLocation || 'Velasquez Builders';
+    if (descEl) descEl.textContent = description || 'On-site construction walkthrough';
+    if (badgeEl) badgeEl.textContent = badge || '9:16 REEL';
+
+    const cleanUrl = bustUrl(videoUrl);
+    player.src = cleanUrl;
+    player.load();
+    player.play().catch(() => {});
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function closePortfolioVideoModal() {
+  const modal = document.getElementById('portfolioVideoModal');
+  const player = document.getElementById('portfolioVideoPlayer');
+  if (player) {
+    player.pause();
+    player.src = '';
+  }
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = 'auto';
+  }
+}
+
+function toggleNativeFullscreenVideo() {
+  const player = document.getElementById('portfolioVideoPlayer');
+  if (!player) return;
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch(() => {});
+  } else if (player.requestFullscreen) {
+    player.requestFullscreen().catch(() => {});
+  } else if (player.webkitRequestFullscreen) {
+    player.webkitRequestFullscreen();
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closePortfolioVideoModal();
+  }
+});
+
 function openQuoteForHome(title) {
   navigateTo('contact');
   const svcSelect = document.querySelector('select[name="service"]');
@@ -2054,6 +2217,25 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div id="portfolioFilterBar" class="flex flex-wrap items-center justify-center gap-2 mb-10"></div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" id="fullGallery"></div>
+
+      <!-- ===== THREE VIDEOS SECTION (9:16 VERTICAL FORMAT) ===== -->
+      <div class="mt-24 pt-16 border-t border-charcoal-200">
+        <div class="text-center max-w-3xl mx-auto mb-12 animate-in">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-mint-50 border border-mint-200 text-mint-700 text-xs font-bold uppercase tracking-wider mb-3 shadow-xs">
+            <span class="w-2 h-2 rounded-full bg-mint-500 animate-pulse"></span>
+            <span>On-Site Reels &amp; Walkthroughs • 9:16 Video</span>
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-serif font-bold text-charcoal-900 mb-3 tracking-tight">
+            Craftsmanship in Motion • <span class="text-mint-600">Video Walkthroughs</span>
+          </h2>
+          <p class="text-charcoal-600 text-sm sm:text-base leading-relaxed">
+            Experience our builds up close in vertical 9:16 format. Click any video below to open full screen and explore custom home framing, siding installation, and commercial craftsmanship.
+          </p>
+        </div>
+
+        <!-- 3 Videos Grid (9:16 Aspect Ratio) -->
+        <div id="portfolio-videos-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto"></div>
+      </div>
     </div>
   </section>
 </div>
@@ -2244,8 +2426,11 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                 <span>Confirm On-Site Inspection Schedule</span>
               </button>
-              <div id="processVisitSuccess" class="hidden text-center text-mint-800 font-bold p-3 bg-mint-50 border border-mint-200 rounded-lg text-xs">
+              <div id="processVisitSuccess" class="formSuccess hidden text-center text-mint-800 font-bold p-3 bg-mint-50 border border-mint-200 rounded-lg text-xs">
                 Inspection visit scheduled! Velasquez Builders will contact you shortly to confirm your arrival window.
+              </div>
+              <div id="processVisitError" class="formError hidden text-center text-rose-800 font-medium p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs">
+                There was an issue scheduling your inspection visit. Please check your information or call us directly at (317) 489-7681.
               </div>
             </form>
           </div>
@@ -2284,7 +2469,7 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
         <div class="max-w-2xl">
           <span class="inline-block px-3 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-black uppercase tracking-widest rounded-md mb-3">Ready to Start?</span>
           <h3 class="text-2xl sm:text-3xl font-bold font-serif text-white mb-3 tracking-tight">Let’s Discuss Your Next Build</h3>
-          <p class="text-slate-200 text-base leading-relaxed font-normal">Schedule a consultation with Velasquez Builders, and our skilled professionals will conduct an inspection visit for the renovation or construction of your home or commercial property.</p>
+          <p class="text-slate-200 text-base leading-relaxed font-normal">Book a consultation with Carlos Velasquez and our master craftsmen for your home or commercial renovation.</p>
         </div>
         <div class="flex flex-wrap gap-4 flex-shrink-0">
           <a href="#" onclick="navigateTo('contact');return false" class="px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-900/40 hover:-translate-y-0.5">
@@ -2347,31 +2532,14 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
             </p>
           </div>
 
-					<div class="space-y-4 bg-charcoal-50 p-6 rounded-2xl border border-charcoal-100"> 
-						<h3 class="text-xs font-bold uppercase tracking-wider text-charcoal-500 mb-2">Headquarters &amp; Direct Line</h3> 
-						
-						<!-- Primer Número -->
-						<a href="tel:+13174897681" id="contact-phone-link" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group"> 
-							<div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0"> 
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg> 
-							</div> 
-							<div>
-								<p class="text-xs text-charcoal-400">Phone</p>
-								<p id="contact-phone-direct" class="font-semibold text-sm">(317) 489-7681 (English/Spanish)</p>
-							</div> 
-						</a> 
-
-						<!-- Segundo Número (Corregido y con Icono) -->
-						<a href="tel:+13179930221" id="contact-phone-link-es" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group"> 
-							<div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0"> 
-								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg> 
-							</div> 
-							<div>
-								<p class="text-xs text-charcoal-400">Phone</p>
-								<p id="contact-phone-direct-es" class="font-semibold text-sm">(317) 993-0221 Español</p>
-							</div> 
-						</a>
-
+          <div class="space-y-4 bg-charcoal-50 p-6 rounded-2xl border border-charcoal-100">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-charcoal-500 mb-2">Headquarters &amp; Direct Line</h3>
+            <a href="tel:+13174897681" id="contact-phone-link" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group">
+              <div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+              </div>
+              <div><p class="text-xs text-charcoal-400">Phone</p><p id="contact-phone-direct" class="font-semibold text-sm">(317) 489-7681</p></div>
+            </a>
             <a href="mailto:contact@velasquezbuilders.com" id="contact-email-link" class="flex items-center gap-4 text-charcoal-700 hover:text-mint-600 transition-colors group">
               <div class="w-10 h-10 rounded-xl bg-white border border-charcoal-200 flex items-center justify-center text-mint-700 flex-shrink-0">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
@@ -2481,7 +2649,8 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
               <span>Request Estimate &amp; Schedule Visit</span>
             </button>
-            <div id="formSuccess" class="hidden text-center text-mint-700 font-bold p-4 bg-mint-50 border border-mint-200 rounded-xl text-sm">Thank you! Request received.</div>
+            <div id="formSuccess" class="formSuccess hidden text-center text-mint-700 font-bold p-4 bg-mint-50 border border-mint-200 rounded-xl text-sm">Thank you! Request received.</div>
+            <div id="formError" class="formError hidden text-center text-rose-800 font-medium p-4 bg-rose-50 border border-rose-200 rounded-xl text-sm">There was an issue sending your request. Please check your information or call us directly at (317) 489-7681.</div>
           </form>
         </div>
 
@@ -2876,6 +3045,47 @@ select.qform-input{appearance:none;background-image:url("data:image/svg+xml,%3Cs
     <img id="lightboxImg" src="" alt="">
   </div>
 
+  <!-- Fullscreen 9:16 Video Modal -->
+  <div id="portfolioVideoModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-charcoal-950/95 p-3 sm:p-6 backdrop-blur-md">
+    <div class="relative w-full max-w-sm sm:max-w-md max-h-[96vh] flex flex-col bg-charcoal-900 rounded-3xl border border-charcoal-700 shadow-2xl overflow-hidden animate-in visible">
+      <!-- Modal Header -->
+      <div class="px-5 py-3.5 bg-charcoal-950/95 border-b border-charcoal-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5 min-w-0 pr-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-mint-400 animate-pulse flex-shrink-0"></span>
+          <span id="portfolioVideoModalBadge" class="text-[10px] font-bold uppercase tracking-wider text-mint-400 bg-mint-500/10 px-2 py-0.5 rounded border border-mint-500/20 whitespace-nowrap">9:16 REEL</span>
+          <h3 id="portfolioVideoModalTitle" class="text-sm font-bold text-white truncate font-serif">Video Walkthrough</h3>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button type="button" onclick="toggleNativeFullscreenVideo()" title="Full Device Screen" class="w-8 h-8 rounded-full bg-charcoal-800 text-charcoal-300 hover:text-white hover:bg-charcoal-700 flex items-center justify-center transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+          </button>
+          <button type="button" onclick="closePortfolioVideoModal()" class="w-8 h-8 rounded-full bg-charcoal-800 text-charcoal-300 hover:text-white hover:bg-charcoal-700 flex items-center justify-center transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- 9:16 Video Player Container -->
+      <div class="flex-1 w-full flex items-center justify-center bg-black overflow-hidden relative aspect-[9/16]">
+        <video id="portfolioVideoPlayer" class="w-full h-full object-cover" controls playsinline loop autoplay>
+          <source src="" type="video/mp4">
+          Your browser does not support HTML5 video.
+        </video>
+      </div>
+
+      <!-- Footer Info & CTA -->
+      <div class="px-5 py-3.5 bg-charcoal-950/95 border-t border-charcoal-800 flex items-center justify-between gap-3 text-xs">
+        <div class="truncate text-charcoal-300">
+          <span id="portfolioVideoModalCat" class="font-bold text-mint-400 block truncate"></span>
+          <span id="portfolioVideoModalDesc" class="text-[11px] text-charcoal-400 block truncate"></span>
+        </div>
+        <button type="button" onclick="closePortfolioVideoModal(); openQuoteForHome(document.getElementById('portfolioVideoModalTitle')?.textContent || 'Construction Project');" class="px-4 py-2 bg-mint-600 hover:bg-mint-700 text-white font-bold rounded-xl transition-all shadow text-xs whitespace-nowrap flex-shrink-0">
+          Request Quote →
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Fullscreen CAD Architectural Blueprint Modal -->
   <div id="cadBlueprintModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-charcoal-950/95 p-4 sm:p-8 backdrop-blur-md">
     <div class="relative w-full max-w-6xl max-h-[92vh] flex flex-col bg-[#0b192c] rounded-2xl border border-sky-800/80 shadow-2xl overflow-hidden">
@@ -2969,6 +3179,7 @@ function navigateTo(page,anchor){
   }
   if (page === 'portfolio') {
     renderPublicPortfolio();
+    renderPortfolioVideos();
   }
   document.querySelectorAll('.nav-link').forEach(nl => {
     if(nl.dataset.page === page) {
@@ -3151,14 +3362,61 @@ function initVisitDatePickers() {
   });
 }
 
+// Centralized Formspree submission service
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xeevzkpb';
+const FORMSPREE_CONTROL_CC = 'moradelii@gmail.com';
+
+async function sendFormspreeRequest(formData, customSubject) {
+  // Configuración centralizada de destinatarios y control
+  // TO se envía al destinatario principal configurado en Formspree (info@velasquezbuilders.com)
+  // CC (copia oculta de control) exclusivamente mediante _cc
+  formData.set('_cc', FORMSPREE_CONTROL_CC);
+  formData.set('_subject', customSubject || 'New Quote Request - Velasquez Builders');
+
+  const customerEmail = formData.get('email');
+  if (customerEmail) {
+    formData.set('_replyto', customerEmail);
+  }
+
+  const response = await fetch(FORMSPREE_ENDPOINT, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      Accept: 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Form submission failed with status ${response.status}`);
+  }
+
+  return response;
+}
+
 async function handleInspectionBooking(e, formId) {
   e.preventDefault();
-  const form = document.getElementById(formId) || e.target;
-  const btn = form.querySelector('button[type="submit"]');
-  const originalText = btn ? btn.innerHTML : 'Confirm';
+  const form = document.getElementById(formId) || e.currentTarget || e.target;
+
+  // A. Validación nativa obligatoria
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
+  const btn = form.querySelector('button[type="submit"]') || form.querySelector('[type="submit"]');
+  const originalContent = btn ? btn.innerHTML : 'Confirm';
+
+  const errorEl = form.querySelector('.formError') || document.getElementById('processVisitError');
+  const successEl = form.querySelector('.formSuccess') || document.getElementById('processVisitSuccess');
+
+  if (errorEl) errorEl.classList.add('hidden');
+  if (successEl) successEl.classList.add('hidden');
+
+  // B. Estado de envío
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<svg class="w-4 h-4 animate-spin inline mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Scheduling On-Site Visit...';
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin inline mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Sending...';
   }
 
   const formData = new FormData(form);
@@ -3183,45 +3441,71 @@ async function handleInspectionBooking(e, formId) {
   };
 
   try {
-    const crmPromise = fetch(`/api/crm/leads?_cb=${Date.now()}`, {
+    // 1. Sincronización paralela no bloqueante con el CRM local si el backend está activo
+    fetch(`/api/crm/leads?_cb=${Date.now()}`, {
       method: 'POST',
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
       body: JSON.stringify(visitPayload)
-    }).catch(err => console.warn('CRM direct sync warning:', err));
+    }).catch(err => console.warn('CRM direct sync non-blocking notice:', err));
 
-    const formspreePromise = fetch('https://formspree.io/f/xeevzkpb', {
-      method: 'POST',
-      body: formData,
-      headers: { Accept: 'application/json' }
-    }).catch(err => console.warn('Email notification warning:', err));
+    // 2. Envío a Formspree con método POST, FormData, _cc y _replyto
+    await sendFormspreeRequest(formData, 'New On-Site Inspection Request - Velasquez Builders');
 
-    await Promise.all([crmPromise, formspreePromise]);
-
-    form.reset();
-    const successEl = document.getElementById('processVisitSuccess');
+    // C. Envío exitoso
     if (successEl) {
+      successEl.innerHTML = `<strong>Inspection Visit Scheduled!</strong> Velasquez Builders has confirmed your visit request for <strong>${visitPayload.visitDate}</strong> (${visitPayload.visitTimeSlot}) at <strong>${visitPayload.visitAddress}, ${visitPayload.visitCity}</strong>. Our team will contact you at <strong>${visitPayload.phone}</strong> to confirm the arrival window.`;
       successEl.classList.remove('hidden');
-      successEl.innerHTML = `<strong>Inspection Visit Scheduled!</strong> Velasquez Builders has confirmed your visit for <strong>${visitPayload.visitDate}</strong> (${visitPayload.visitTimeSlot}) at <strong>${visitPayload.visitAddress}, ${visitPayload.visitCity}</strong>. Our team will contact you at <strong>${visitPayload.phone}</strong> to confirm arrival window.`;
       successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+
+    // Ocultar formulario o campos para evitar envíos duplicados conservando el diseño
+    const fieldsToHide = form.querySelectorAll('input, select, textarea, button[type="submit"]');
+    fieldsToHide.forEach(el => {
+      el.style.display = 'none';
+    });
+
   } catch(err) {
+    // D. Error de envío: se mantiene la información, se reactiva el botón y se muestra error
     console.error('Inspection booking error:', err);
-    alert('There was an issue scheduling your inspection visit. Please call us directly at (317) 489-7681.');
-  } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = originalText;
+      btn.innerHTML = originalContent;
+    }
+    if (errorEl) {
+      errorEl.classList.remove('hidden');
+      errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      alert('There was an issue scheduling your inspection visit. Please call us directly at (317) 489-7681.');
     }
   }
 }
 
 async function handleFormSubmit(e){
   e.preventDefault();
-  const form=e.target;
-  const btn=document.getElementById('submitBtn');
-  btn.disabled=true; btn.textContent='Sending...';
-  
+  const form = e.currentTarget || e.target;
+
+  // A. Validación nativa obligatoria
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn') || form.querySelector('button[type="submit"]') || form.querySelector('[type="submit"]');
+  const originalContent = btn ? btn.innerHTML : 'Request Estimate & Schedule Visit';
+
+  const errorEl = form.querySelector('.formError') || document.getElementById('formError');
+  const successEl = form.querySelector('.formSuccess') || document.getElementById('formSuccess');
+
+  if (errorEl) errorEl.classList.add('hidden');
+  if (successEl) successEl.classList.add('hidden');
+
+  // B. Estado de envío
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin inline mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Sending...';
+  }
+
   const formData = new FormData(form);
   const isVisitRequested = form.querySelector('input[name="visitRequested"]')?.checked !== false && Boolean(formData.get('visitAddress') || formData.get('visitDate'));
 
@@ -3249,40 +3533,51 @@ async function handleFormSubmit(e){
   };
 
   try {
-    // 1. Direct Webhook sync to backend CRM Database
-    const crmPromise = fetch(`/api/crm/leads?_cb=${Date.now()}`, {
+    // 1. Sincronización paralela no bloqueante con el CRM local si el backend está activo
+    fetch(`/api/crm/leads?_cb=${Date.now()}`, {
       method: 'POST',
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
       body: JSON.stringify(leadPayload)
-    }).catch(err => console.warn('CRM direct sync warning:', err));
+    }).catch(err => console.warn('CRM direct sync non-blocking notice:', err));
 
-    // 2. Email delivery forwarder via Formspree
-    const formspreePromise = fetch('https://formspree.io/f/xeevzkpb', {
-      method: 'POST',
-      body: formData,
-      headers: { Accept: 'application/json' }
-    }).catch(err => console.warn('Email notification warning:', err));
+    // 2. Envío a Formspree con método POST, FormData, _cc y _replyto
+    const emailSubject = isVisitRequested
+      ? 'New Quote Request & On-Site Inspection - Velasquez Builders'
+      : 'New Quote Request - Velasquez Builders';
 
-    await Promise.all([crmPromise, formspreePromise]);
+    await sendFormspreeRequest(formData, emailSubject);
 
-    form.reset();
-    const successEl = document.getElementById('formSuccess');
+    // C. Envío exitoso
     if (successEl) {
-      successEl.classList.remove('hidden');
       if (isVisitRequested) {
-        successEl.innerHTML = `<strong>Estimate Request & Inspection Scheduled!</strong> Velasquez Builders has confirmed your on-site pre-inspection for <strong>${leadPayload.visitDate}</strong> (${leadPayload.visitTimeSlot}) at <strong>${leadPayload.visitAddress}</strong>. We will contact you at <strong>${leadPayload.phone}</strong> to confirm details.`;
+        successEl.innerHTML = `<strong>Estimate Request &amp; Inspection Scheduled!</strong> Velasquez Builders has confirmed your request for <strong>${leadPayload.visitDate}</strong> (${leadPayload.visitTimeSlot}) at <strong>${leadPayload.visitAddress}</strong>. We will contact you at <strong>${leadPayload.phone}</strong> to confirm details.`;
       } else {
-        successEl.innerHTML = 'Thank you! Your quote request has been received. Our team will contact you shortly.';
+        successEl.innerHTML = 'Thank you! Your quote request has been received. Velasquez Builders will contact you shortly.';
       }
+      successEl.classList.remove('hidden');
       successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  } catch(err){
+
+    // Ocultar campos para evitar envíos duplicados conservando el contenedor
+    const fieldsToHide = form.querySelectorAll('input, select, textarea, button[type="submit"], #quoteVisitFields');
+    fieldsToHide.forEach(el => {
+      el.style.display = 'none';
+    });
+
+  } catch(err) {
+    // D. Error de envío: se mantiene la información, se reactiva el botón y se muestra mensaje de error
     console.error('Submission error:', err);
-    alert('There was an issue sending your message. Please give us a call directly.');
-  } finally {
-    btn.disabled=false;
-    btn.innerHTML='<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg> Request Estimate &amp; Schedule Visit';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalContent;
+    }
+    if (errorEl) {
+      errorEl.classList.remove('hidden');
+      errorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      alert('There was an issue sending your message. Please give us a call directly at (317) 489-7681.');
+    }
   }
 }
 
